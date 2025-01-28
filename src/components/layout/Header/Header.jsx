@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu } from '@headlessui/react';
-import { Link } from 'react-router-dom';
-import logoMax from '../../assets/images/logo-max.png'; // Ajuste le chemin selon ta structure
+import { NavLink } from 'react-router-dom';
+import logoMax from '../../../assets/images/logo-max.png';
 import './Header.css';
 
 const Header = () => {
@@ -10,18 +10,33 @@ const Header = () => {
       <nav className="nav-container">
         {/* Logo et navigation gauche */}
         <div className="left-nav">
-          <Link to="/" className="logo-container">
+          <NavLink to="/" className="logo-container">
             <img src={logoMax} alt="MAX - Assistant électronique" className="logo" />
-          </Link>
+          </NavLink>
           <div className="nav-links">
-            <Link to="/courses" className="nav-link">Les cours</Link>
-            <Link to="/create-card" className="nav-link">Créer une fiche</Link>
+            <NavLink 
+              to="/courses" 
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              Les cours
+            </NavLink>
+            <NavLink 
+              to="/create-card" 
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              Créer une fiche
+            </NavLink>
           </div>
         </div>
 
         {/* Navigation droite */}
         <div className="right-nav">
-          <Link to="/chatbot" className="nav-link">Max le chatbot</Link>
+          <NavLink 
+            to="/chatbot" 
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            Max le chatbot
+          </NavLink>
           <Menu as="div" className="favorites-menu">
             <Menu.Button className="favorites-button">
               Mes favoris
@@ -30,22 +45,22 @@ const Header = () => {
             <Menu.Items className="dropdown-menu">
               <Menu.Item>
                 {({ active }) => (
-                  <Link
+                  <NavLink
                     to="/favorites/courses"
-                    className={`dropdown-item ${active ? 'active' : ''}`}
+                    className={({ isActive }) => `dropdown-item ${isActive ? 'active' : ''} ${active ? 'hover' : ''}`}
                   >
                     Mes cours
-                  </Link>
+                  </NavLink>
                 )}
               </Menu.Item>
               <Menu.Item>
                 {({ active }) => (
-                  <Link
+                  <NavLink
                     to="/favorites/cards"
-                    className={`dropdown-item ${active ? 'active' : ''}`}
+                    className={({ isActive }) => `dropdown-item ${isActive ? 'active' : ''} ${active ? 'hover' : ''}`}
                   >
                     Fiches et Quizz
-                  </Link>
+                  </NavLink>
                 )}
               </Menu.Item>
             </Menu.Items>
