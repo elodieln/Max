@@ -44,8 +44,9 @@
     transition: color 0.2s ease;
   }
   
-  .nav-link:hover {
-    color: #F9BC97;
+  .nav-link:hover,
+  .nav-link.active {
+    color: #FF914D;
   }
   
   /* Menu déroulant */
@@ -64,12 +65,17 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem;
+    transition: color 0.2s ease;
+  }
+  
+  .favorites-button:hover {
+    color: #FF914D;
   }
   
   .arrow-down {
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid white;
+    border-top: 5px solid currentColor;
     margin-left: 5px;
   }
   
@@ -90,10 +96,11 @@
     color: #007179;
     text-decoration: none;
     font-family: 'Montserrat', sans-serif;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   
   .dropdown-item:hover,
+  .dropdown-item.hover,
   .dropdown-item.active {
     background-color: #F9BC97;
     color: #007179;
