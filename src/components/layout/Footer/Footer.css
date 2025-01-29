@@ -7,6 +7,24 @@
     box-sizing: border-box;
   }
   
+  .footer-sections-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    gap: 2rem;
+  }
+  
+  .footer-logo {
+    margin-right: 2rem;
+  }
+  
+  .footer-logo-img {
+    height: 80px; /* Logo plus grand */
+    object-fit: contain;
+    margin-top: -1rem; /* Pour aligner avec le texte "Navigation" */
+  }
+  
   .footer-content {
     width: 100%;
     max-width: 1200px;
