@@ -70,11 +70,12 @@ const CoursesPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#007179]">
-      <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="pt-20 md:pt-24 lg:pt-28">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">
-            L'ensemble des cours
-          </h1>
+    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      {/* Augmentons le padding-top pour éviter la superposition */}
+      <div className="pt-32 md:pt-36 lg:pt-40"> {/* Modifié de pt-20/24/28 à pt-32/36/40 */}
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">
+          L'ensemble des cours
+        </h1>
 
           <div className="space-y-4 md:space-y-6">
             <div className="w-full">

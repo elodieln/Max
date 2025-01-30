@@ -17,8 +17,12 @@ const Header = () => {
       <nav className="nav-container">
         {/* Logo et bouton menu */}
         <div className="left-nav">
-          <NavLink to="/" className="logo-container">
-            <img src={logoMax} alt="MAX - Assistant électronique" className="logo" />
+          <NavLink to="/" className="logo-container mr-8"> {/* Ajout de mr-8 pour margin-right */}
+            <img 
+              src={logoMax} 
+              alt="MAX - Assistant électronique" 
+              className="h-24 w-auto"
+            />
           </NavLink>
           
           <button 

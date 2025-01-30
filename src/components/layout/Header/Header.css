@@ -364,42 +364,66 @@
 }
 
 /* Mobile */
+/* Style pour les petits écrans et mobiles */
 @media (max-width: 768px) {
-    .mobile-menu-button {
-        display: block;
+    .header {
+        padding: 0.5rem;
+    }
+
+    .nav-container {
+        padding: 0;
     }
 
     .nav-content {
-        position: fixed;
-        top: 72px;
+        position: absolute; /* Changé de fixed à absolute */
+        top: 100%; /* Pour qu'il commence juste après le header */
         left: 0;
         right: 0;
         background-color: #007179;
-        flex-direction: column;
-        align-items: flex-start;
         padding: 1rem;
-        gap: 1rem;
-        display: none;
-        height: calc(100vh - 72px);
+        max-height: calc(100vh - 80px); /* Hauteur maximale ajustée */
         overflow-y: auto;
-        transition: opacity 0.3s ease-in-out;
+        display: none;
         opacity: 0;
-        pointer-events: none;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
     }
 
     .nav-content.nav-active {
         display: flex;
         opacity: 1;
-        pointer-events: auto;
+        transform: translateY(0);
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .nav-links {
+        display: flex;
         flex-direction: column;
+        align-items: center;
         width: 100%;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .nav-link {
+        padding: 0.5rem 1rem;
+        width: 100%;
+        text-align: center;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
 
     .right-nav {
+        display: flex;
         flex-direction: column;
+        align-items: center;
         width: 100%;
         gap: 1rem;
     }
@@ -408,14 +432,30 @@
         width: 100%;
     }
 
+    .favorites-button {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+    }
+
     .dropdown-menu {
         position: static;
         width: 100%;
         margin-top: 0.5rem;
+        box-shadow: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .nav-link {
+    .mobile-menu-button {
         display: block;
-        padding: 0.5rem 0;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 20;
+    }
+
+    .logo-container {
+        margin-left: 1rem;
     }
 }
