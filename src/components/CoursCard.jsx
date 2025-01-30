@@ -5,7 +5,7 @@ const CoursCard = ({ cours }) => {
   const defaultImage = "https://placehold.co/600x400/007179/FFFFFF/png?text=Cours"; // Image par défaut
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="h-full bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative">
         <img
           src={cours.photo_url || '/placeholder-course.jpg'}
