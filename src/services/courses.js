@@ -6,18 +6,18 @@ export const fetchCours = async () => {
     console.log("Début fetchCours");
     const { data, error } = await supabase
       .from('courses')
-      .select('*');
-
-    console.log("Réponse Supabase:", { data, error }); // Debug
+      .select('*')
+      .order('id', { ascending: true }); // Ajout du tri
 
     if (error) {
       console.error("Erreur Supabase:", error);
       throw error;
     }
 
+    console.log("Données reçues:", data);
     return data || [];
   } catch (error) {
-    console.error("Erreur fetchCours:", error);
+    console.error("Erreur complète:", error);
     throw error;
   }
 };
