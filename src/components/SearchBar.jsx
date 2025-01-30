@@ -1,15 +1,21 @@
+// src/components/SearchBar.jsx
 import React from 'react';
 
 const SearchBar = ({ onSearch }) => {
+  const handleSearchChange = (e) => {
+    const searchValue = e.target.value;
+    onSearch(searchValue);
+  };
+
   return (
-    <div className="relative w-full">
+    <div className="w-full relative">
       <input
         type="text"
         placeholder="Rechercher un cours..."
-        onChange={(e) => onSearch(e.target.value)}
+        onChange={handleSearchChange}
         className="w-full px-4 py-2 md:py-3 rounded-lg border border-gray-200 
-                   focus:outline-none focus:ring-2 focus:ring-max-primary focus:border-transparent
-                   text-sm md:text-base"
+                 focus:outline-none focus:ring-2 focus:ring-max-primary focus:border-transparent
+                 text-sm md:text-base"
       />
       <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
         <svg
