@@ -3,7 +3,7 @@
 Useful links : 
 
 - How to use git : 
-- - https://github.com/JustFS/cours-github/blob/master/versionner.png
+    - https://github.com/JustFS/cours-github/blob/master/versionner.png
 
 
 - Available Plugins:
