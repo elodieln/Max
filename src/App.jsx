@@ -5,6 +5,8 @@ import Footer from './components/layout/Footer/Footer';
 import CoursesPage from './pages/Courses/CoursesPage';
 // Modifier le chemin d'importation pour correspondre à votre structure
 import CoursesFavoritesPage from './pages/Favorites/CoursesFavorites/CoursesFavoritesPage';
+import AICardsPage from './pages/AICards/AICardsPage';
+
 
 function App() {
   return (
@@ -14,7 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<CoursesPage />} />
           <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/create-card" element={<div>Page de création de fiche</div>} />
+          <Route path="/create-card" element={<AICardsPage />} />
           <Route path="/chatbot" element={<div>Chatbot</div>} />
           {/* Remplacer le div par le composant */}
           <Route path="/favorites/courses" element={<CoursesFavoritesPage />} />
