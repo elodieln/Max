@@ -12,6 +12,7 @@ const Chatbot = () => {
   const handleGeneratePDF = async () => {
     setLoading(true);
     try {
+      console.log('question =', question);
       const response = await axios.post('http://localhost:5000/generate-pdf', { question });
       setPdfUrl(response.data.pdfPath);
     } catch (error) {

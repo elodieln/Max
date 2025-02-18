@@ -34,8 +34,8 @@ app.use(express.json());
 
 // Configuration CORS
 const corsOptions = {
-  origin: 'http://localhost:5179',  // Remplace par l'URL de ton frontend
-  methods: 'GET,POST',
+  origin: 'http://localhost:5173',  // Remplace par l'URL de ton frontend
+  methods: ['GET,POST'],
 };
 app.use(cors(corsOptions));
 
@@ -121,6 +121,7 @@ function generatePDF(jsonData, res) {
 
 //Endpoint pour générer le PDF
 app.post('/generate-pdf', async (req, res) => {
+  console.log('req.body =', req.body);
   const { question } = req.body;
 
   try {
