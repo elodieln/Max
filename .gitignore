@@ -16,6 +16,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+venv/ # Ajout du dossier venv
 
 # Fichiers locaux
 *.local
@@ -30,3 +31,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/ # Ajout du dossier __pycache__
+*.pyc # Ajout des fichiers .pyc
+
+# Autres
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# package-lock.json # Ajout de package-lock.json
+# A ajouter si problèmes de dépendances entre les machines
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
