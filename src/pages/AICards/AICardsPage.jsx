@@ -6,20 +6,42 @@ import './AICardsPage.css';
 
 const Chatbot = () => {
   const [question, setQuestion] = useState('');
-  const [pdfUrl, setPdfUrl] = useState(null);
+  //const [pdfUrl, setPdfUrl] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleGeneratePDF = async () => {
     setLoading(true);
-    try {
+    try{
       console.log('question =', question);
-      const response = await axios.post('http://localhost:5000/generate-pdf', { question });
-      setPdfUrl(response.data.pdfPath);
-    } catch (error) {
+      //const response = await axios.post('http://localhost:5000/generate-pdf', { question });
+      //setPdfUrl(response.data.pdfPath);
+      const response = await axios.post(
+        'http://localhost:5000/generate-pdf',
+        {question},
+        {responseType: 'blob'}
+      );
+
+      //créer une url temporaire
+      const pdfBlob = new Blob([response.data], { type: 'application/pdf'});
+      const pdfUrl = window.URL.createObjectURL(pdfBlob);
+
+      
+      // Créer un lien <a> et déclencher un clic pour télécharger automatiquement
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.setAttribute('download', 'fiche_cours.pdf');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Libérer l'URL temporaire
+      window.URL.revokeObjectURL(pdfUrl);
+
+    }catch (error) {
       console.error('Erreur lors de la génération du PDF', error);
     } finally {
       setLoading(false);
-    }
+    }  
   };
 
   return (
@@ -40,12 +62,6 @@ const Chatbot = () => {
             <button onClick={handleGeneratePDF} disabled={loading}>
               {loading ? 'Génération en cours...' : 'Générer'}
             </button>
-            {pdfUrl && (
-              <div>
-                <p>PDF généré avec succès !</p>
-                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">Télécharger le PDF</a>
-              </div>
-            )}
           </div>
         </div>
       </div>

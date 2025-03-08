@@ -1,32 +1,41 @@
 // backend/server.js
 import { Pinecone } from '@pinecone-database/pinecone';  // Utilisation de Pinecone pour la version la plus récente
-import { OpenAI } from 'openai';  // Importation de OpenAI
+import { AzureOpenAI } from 'openai/index.mjs';
+import { OpenAI} from 'openai';
 import express from 'express';
 import dotenv from 'dotenv';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
-
+import { PassThrough } from 'stream';
 
 // Charger les variables d'environnement depuis .env
 dotenv.config();
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const AZURE_API_KEY = process.env.AZURE_API_KEY;
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
+const AZURE_ENDPOINTS = process.env.AZURE_ENDPOINTS;
+const OPENAI_APY_KEY = process.env.OPENAI_APY_KEY;
 
-// Initialiser OpenAI API
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-  model: "gpt-4-0125-preview", 
-});
+// Inititaliser Azure OpenAI
+const client = new AzureOpenAI ({
+  endpoint: AZURE_ENDPOINTS,
+  apiKey: AZURE_API_KEY,
+  apiVersion: "2023-09-01-preview",
+})
+
+//Initialiser OpenRouter
+const openai = new OpenAI ({
+  apiKey: OPENAI_APY_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
+})
 
 // Initialiser Pinecone
 const pinecone = new Pinecone ({
   apiKey: PINECONE_API_KEY,
   //environment: PINECONE_ENVIRONMENT,
-})
-
+});
 
 // Créer l'application Express et configurer les middlewares 
 const app = express();
@@ -39,31 +48,27 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-
-// Fonction pour récupérer les embeddings depuis OpenAI
-async function getEmbeddings(text) {
-  try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-ada-002', // Modèle d'OpenAI pour les embeddings
-      input: text,
-    });
-    return response.data.data[0].embedding; // Récupère l'embedding du texte
-  } catch (error) {
-    console.error("Erreur lors de la récupération des embeddings:", error);
-    throw error;
-  }
-}
-
 // Fonction pour récupérer les données pertinentes de Pinecone
 async function getPineconeContext(question) {
   try {
     // Utiliser l'index Pinecone 
     const index = pinecone.Index('maxdataset');
+    
+    //Récupérer les embeddings depuis Azure Openai
+    const embeddingResponse = await client.embeddings.create({
+      input: question,
+      model: "text-embedding-ada-002",
+    });
+    console.log("Full embeddings response :", embeddingResponse);
+    
+    //Extraire le tableau d'embedding
+    const embedding = embeddingResponse.data[0].embedding;
+    console.log('Embedding array', embedding);
+    
     const query = {
-      vector: await getEmbeddings(question), // Récupère l'embedding de la question
-      top_k: 3, // Nombre de résultats à retourner
-      include_values: true,
-      include_metadata: true,
+      topK: 5,
+      vector: embedding, // Récupère l'embedding de la question
+      includeMetadata : true,
     };
 
     const response = await index.query(query);
@@ -75,6 +80,7 @@ async function getPineconeContext(question) {
     }
 
     const context = response.matches.map(match => match.metadata.text).join('\n');
+    console.log('Le contexte : ',context);
     return context;
   } catch (error) {
     console.error('Erreur Pinecone:', error);
@@ -83,12 +89,14 @@ async function getPineconeContext(question) {
 }
 
 // Fonction pour générer un PDF à partir du JSON de ChatGPT
-function generatePDF(jsonData, res) {
-  const doc = new PDFDocument();
-  const pdfPath = './generated_fiche.pdf'; // Chemin temporaire pour le PDF
-  doc.pipe(fs.createWriteStream(pdfPath));
+function generatePDF(jsonData) {
+  const doc = new PDFDocument({autoFirstPage: false});
+  ////////////////////////////////a enlever 
+  //const pdfPath = './generated_fiche.pdf'; // Chemin temporaire pour le PDF
+  //doc.pipe(fs.createWriteStream(pdfPath));
 
   // Générer le contenu du PDF
+  doc.addPage();
   // Ajout du titre
   doc.fontSize(18).text('Fiche de Révision', { align: 'center' });
   doc.moveDown();
@@ -97,7 +105,7 @@ function generatePDF(jsonData, res) {
   doc.fontSize(12).text(`Titre du cours: ${jsonData.cours["Titre du cours"]}`);
   doc.text(`Description: ${jsonData.cours["Description du cours"]}`);
   doc.text(`Concepts clés: ${jsonData.cours["Concepts clés"].join(', ')}`);
-  doc.text(`Définition et formules: ${jsonData.cours["Définitions et formules"].join(', ')}`);
+  doc.text(`Définition et formules: ${jsonData.cours["Définitions et Formules"].join(', ')}`);
   doc.text(`Exemple concret: ${jsonData.cours["Exemple concret"]}`);
   doc.text(`Points clés: ${jsonData.cours["Bullet points avec les concepts clés"].join(', ')}`);
   doc.moveDown();
@@ -110,12 +118,13 @@ function generatePDF(jsonData, res) {
       doc.text(`${index + 1}. ${choix}`);
     });
     doc.text(`Bonne réponse: ${question.bonne_reponse}`);
-    doc.text(`Explication: ${question.explanation}`);
+    doc.text(`Explication: ${question.explication}`);
     doc.moveDown();
   });
 
   // Finalisation du PDF
   doc.end();
+  return doc;
 }
 
 
@@ -168,26 +177,48 @@ app.post('/generate-pdf', async (req, res) => {
       - Les autres champs doivent contenir des chaînes simples
       - Formater les formules de manière simple
       - Assurez-vous que la réponse est strictement au format JSON valide
+      - Ne mets pas de backticks ou de code block dans ta réponse.
+      - Ta réponse doit être strictement au format JSON valide, sans texte supplémentaire.
     `;
 
     // 3. Envoyer le prompt à ChatGPT pour obtenir le JSON
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-0125-preview',
-      messages: [{ role: 'system', content: prompt }],
+    /*//////////////////////////////////////////////////////// VERSION AZURE////////////////
+    const response = await client.completions.create({
+      deployment:'gpt-4',
+      prompt: prompt,
+      
     });
     
     //convertir la réponse en JSON
-    const jsonData = JSON.parse(responseAI.choices[0].message.content);
+    const jsonData = JSON.parse(response.choices[0].text);*/
+
+    const response = await openai.chat.completions.create({
+      model: 'google/gemini-2.0-flash-001',
+      messages: [{ role: 'system', content: prompt }],
+    });
+    let completionText = response.choices[0].message.content;
+    console.log('==== Completion TEXT ====');
+    
+
+    //supprimer les occurenres de ``` et ```json
+    completionText = completionText.replace(/```(\w+)?/g, '').replace(/```/g, '');
+    console.log(completionText);
+
+    const jsonData =  JSON.parse(completionText);
     
     //générer le PDF
-    generatePDF(jsonData, res);
+    const doc = generatePDF(jsonData);
 
-    //envoi du pdf en telechargement
-    res.download('generated_fiche.pdf', 'fiche_cours.pdf', (err) => {
-      if (err) {
-        console.error('Erreur lors de l\'envoi du PDF:', err);
-        res.status(500).send('Erreur lors de l\'envoi du PDF');
-      }
+    //configurer l'en tete pour forcer le telechargement
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="fiche_cours.pdf"');
+    
+    //envoyer le pdf en streaming
+    doc.pipe(res);
+
+    doc.on('error', (err) => {
+      console.error('Erreur de génération PDF:', err);
+      return res.status(500).send('Erreur lors de la génération du PDF.');
     });
 
   } catch (error) {

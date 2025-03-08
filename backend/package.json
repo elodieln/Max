@@ -13,12 +13,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@azure/openai": "^2.0.0",
     "@pinecone-database/pinecone": "^5.0.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "openai": "^4.85.1",
+    "openai": "^4.86.2",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.16.0"
   }
