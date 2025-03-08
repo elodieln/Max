@@ -1,0 +1,244 @@
+# Rapport technique : Implémentation RAG Multimodal pour MAX
+
+## 1. Introduction
+
+Ce document décrit l'implémentation d'un système RAG (Retrieval Augmented Generation) multimodal pour le projet MAX, assistant en électronique. Le système est conçu pour extraire et indexer à la fois le texte et les images des documents PDF de cours d'électronique, permettant des recherches contextuelles sur les deux modalités.
+
+## 2. Architecture et composants
+
+### 2.1 Pipeline général
+
+Le système se compose des éléments suivants :
+- Extraction de contenu PDF (texte et images)
+- Génération d'embeddings pour le texte et les images
+- Stockage des chunks et embeddings dans Supabase
+- Recherche vectorielle via fonction RPC PostgreSQL
+- Interface de recherche et présentation des résultats
+
+### 2.2 Détail des composants
+
+#### 2.2.1 PDFProcessor
+Responsable de l'extraction du texte et des images des PDF, avec génération de trois types de chunks :
+- Chunks de texte : sections textuelles du document
+- Chunks d'image : images extraites du document
+- Chunks mixtes : combinaison texte-image d'une page entière
+
+Fonctionnalités spécifiques :
+- Détection des sections de cours
+- Identification des formules et schémas
+- Découpage intelligent avec chevauchement
+
+#### 2.2.2 EmbeddingsClient
+Génère des vecteurs d'embedding pour le texte et les images :
+- Utilise l'API LlamaIndex pour les embeddings (quand disponible)
+- Possède un fallback sur modèle local SentenceTransformer
+- Adapte la dimensionnalité des embeddings locaux (384→1536)
+
+#### 2.2.3 SupabaseManager
+Gère le stockage et la récupération des données :
+- Stockage des chunks avec leurs embeddings
+- Recherche vectorielle par similarité cosinus
+- Suppression et mise à jour des vecteurs
+
+#### 2.2.4 Fonction RPC PostgreSQL (`match_documents`)
+Implémente la recherche vectorielle dans Supabase
+
+## 3. État actuel de l'implémentation
+
+### 3.1 Fonctionnalités opérationnelles
+
+- ✅ Extraction de texte et images des PDF
+- ✅ Génération d'embeddings avec adaptation de dimensions
+- ✅ Stockage dans Supabase avec différenciation des types de contenu
+- ✅ Fallback sur modèle local en cas d'échec de l'API
+- ✅ Recherche vectorielle basique
+- ✅ Structure modulaire et extensible
+
+### 3.2 Limitations actuelles
+
+- ⚠️ L'API LlamaIndex (`https://lmspaul--llamaindex-embeddings-fast-api.modal.run`) retourne souvent des erreurs 500
+- ⚠️ Les scores de similarité sont relativement bas (0.01-0.02), indiquant que l'alignement sémantique pourrait être amélioré
+- ⚠️ Pas d'intégration avec un LLM comme Gemini Flash pour interpréter les résultats
+- ⚠️ Chargement séquentiel des chunks, ce qui ralentit le traitement des documents volumineux
+
+### 3.3 Détails techniques supplémentaires
+
+- **Dimensions des embeddings**: Le système est configuré pour des vecteurs de 1536 dimensions
+- **Adaptation de dimension**: Une technique de répétition de vecteur (`np.tile`) est utilisée pour adapter les embeddings locaux de 384 à 1536 dimensions
+- **Format de stockage des images**: Base64 pour faciliter le transfert et le stockage
+- **Gestion des erreurs**: Système robuste avec fallbacks à chaque étape
+
+## 4. Prochaines étapes
+
+### 4.1 Intégration avec Gemini Flash
+
+Implémenter l'intégration avec Gemini Pro Vision pour :
+- Améliorer la compréhension des requêtes visuelles
+- Générer des réponses contextualisées basées sur les documents récupérés
+- Traiter les formules et schémas électroniques avec compréhension visuelle
+
+Exemple d'implémentation :
+```python
+import google.generativeai as genai
+
+def setup_gemini():
+    api_key = os.getenv("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel('gemini-pro-vision')
+
+async def process_query_with_gemini(query, context_texts, context_images):
+    model = setup_gemini()
+    prompt = f"Question: {query}\n\nContexte:\n{' '.join(context_texts)}"
+    
+    image_parts = []
+    for img_data in context_images:
+        image_parts.append({
+            "inlineData": {
+                "mimeType": "image/png",
+                "data": img_data
+            }
+        })
+    
+    parts = [{"text": prompt}]
+    parts.extend(image_parts)
+    
+    response = model.generate_content(parts)
+    return response.text
+```
+
+### 4.2 Implémentation du Query Rewriting
+
+Développer un système de réécriture de requêtes pour améliorer la pertinence des résultats :
+- Expansion des termes techniques en électronique
+- Clarification des ambiguïtés
+- Ajout de contexte spécifique au domaine
+
+```python
+async def rewrite_query(query):
+    rewriting_prompt = f"""
+    Reformule la requête suivante pour maximiser la pertinence dans un contexte d'électronique:
+    
+    Requête originale: {query}
+    
+    Requête reformulée:
+    """
+    
+    model = setup_gemini()
+    response = model.generate_content(rewriting_prompt)
+    return response.text.strip()
+```
+
+### 4.3 Optimisations de performance
+
+- Batchifier les insertions Supabase pour accélérer le chargement
+- Créer des index IVF-FLAT dans PostgreSQL pour les embeddings
+- Implémenter un système de cache pour les requêtes fréquentes
+- Paralléliser la génération d'embeddings
+
+```sql
+-- Index IVF-FLAT recommandé pour Supabase
+CREATE INDEX ON vectors 
+USING ivfflat (embedding vector_cosine_ops) 
+WITH (lists = 100);
+```
+
+### 4.4 Amélioration du chunking et des embeddings
+
+- Tester différentes stratégies de chunking (taille, chevauchement)
+- Expérimenter d'autres modèles d'embedding multimodaux
+- Implémenter une agrégation intelligente des résultats
+- Ajouter un filtrage basé sur les métadonnées (sections, types de contenu)
+
+### 4.5 Interface utilisateur
+
+- Développer une interface de recherche intuitive
+- Afficher les résultats avec mise en évidence
+- Permettre l'affichage côte à côte des images et du texte
+- Intégrer des fonctionnalités de feedback utilisateur
+
+## 5. Détails d'implémentation et remarques
+
+### 5.1 Dépendances principales
+
+- `sentence-transformers==3.4.1`: Pour les embeddings locaux
+- `huggingface-hub==0.29.2`: Requis pour sentence-transformers
+- `pypdf` et `pdf2image`: Pour l'extraction de contenu PDF
+- `supabase-py`: Client Python pour Supabase
+- `numpy==1.24.3`: Version spécifique requise pour compatibilité
+
+### 5.2 Configuration Supabase
+
+Le schéma de la table `vectors` comprend :
+```sql
+create table public.vectors (
+  id bigint generated by default as identity not null,
+  course_id integer null,
+  chunk_index integer null,
+  chunk_text text null,
+  chunk_type text null,  -- 'text', 'image', 'mixed'
+  page_number integer null,
+  embedding public.vector(1536) null,
+  metadata jsonb null,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  image_data text null,
+  is_multimodal boolean null default false,
+  constraint vectors_pkey primary key (id),
+  constraint vectors_course_id_fkey foreign KEY (course_id) references courses (id)
+)
+```
+
+La fonction RPC pour la recherche :
+```sql
+CREATE OR REPLACE FUNCTION match_documents(
+  query_embedding vector,
+  match_count int DEFAULT 5
+)
+RETURNS TABLE (
+  id bigint,
+  course_id int,
+  chunk_text text,
+  chunk_type text,
+  page_number int,
+  metadata jsonb,
+  image_data text,
+  is_multimodal boolean,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    vectors.id,
+    vectors.course_id,
+    vectors.chunk_text,
+    vectors.chunk_type,
+    vectors.page_number,
+    vectors.metadata,
+    vectors.image_data,
+    vectors.is_multimodal,
+    1 - (vectors.embedding <=> query_embedding) AS similarity
+  FROM vectors
+  WHERE vectors.embedding IS NOT NULL
+  ORDER BY vectors.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+```
+
+### 5.3 Notes pour le déploiement
+
+- Configurer les variables d'environnement : `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`
+- S'assurer que l'extension `pgvector` est activée dans Supabase
+- Vérifier la compatibilité des versions de Python (3.9 recommandé)
+- Gérer correctement les chemins des fichiers PDF sources
+
+### 5.4 Problèmes connus
+
+- Taille importante des données images Base64 peut ralentir les requêtes
+- Certains PDF complexes peuvent nécessiter un prétraitement
+- L'API d'embeddings distante n'est pas toujours fiable
+
+## 6. Conclusion
+
+Le système RAG multimodal pour MAX est fonctionnel dans sa forme actuelle mais nécessite des améliorations pour devenir un produit complet. Les prochaines étapes définies ci-dessus augmenteront considérablement sa robustesse, sa pertinence et son expérience utilisateur. La priorité devrait être accordée à l'intégration de Gemini Flash pour améliorer la compréhension et le traitement des requêtes multimodales.
