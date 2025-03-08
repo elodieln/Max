@@ -21,6 +21,7 @@ class PDFProcessor:
     def extract_content(self) -> List[Dict[str, Any]]:
         """
         Extrait le contenu du PDF page par page avec un meilleur découpage et métadonnées
+        Inclut maintenant des chunks mixtes pour le RAG multimodal
         """
         try:
             chunks = []
@@ -57,6 +58,21 @@ class PDFProcessor:
                         'content_type': content_type,
                         'has_formula': self._has_formula(text),
                         'has_diagram': self._has_diagram(text)
+                    }
+                })
+                
+                # NOUVELLE PARTIE: Ajouter un chunk mixte (texte + image)
+                chunks.append({
+                    'type': 'mixed',
+                    'content': text,  # Le texte complet de la page
+                    'image_data': img_base64,  # L'image complète de la page
+                    'page_number': page_num,
+                    'metadata': {
+                        'section': section,
+                        'content_type': content_type,
+                        'has_formula': self._has_formula(text),
+                        'has_diagram': self._has_diagram(text),
+                        'is_multimodal': True
                     }
                 })
                 

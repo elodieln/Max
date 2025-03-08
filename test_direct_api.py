@@ -5,11 +5,11 @@ import json
 def test_direct_api():
     base_url = "https://lmspaul--llamaindex-embeddings-fast-api.modal.run"
     
-    # Test avec le format exact du README original
+    # L'API attend directement une liste et non un objet contenant une liste
     url = f"{base_url}/encode_queries"
-    payload = {
-        "queries": ["Ceci est un test sur les capteurs en électronique"]
-    }
+    
+    # Modifions le format pour envoyer directement une liste
+    payload = ["Ceci est un test sur les capteurs en électronique"]
     
     print("Sending payload:", json.dumps(payload))
     

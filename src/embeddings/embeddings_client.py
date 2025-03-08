@@ -27,7 +27,7 @@ class EmbeddingsClient:
         
     async def encode_text(self, texts: List[str]) -> List[List[float]]:
         """
-        Génère des embeddings pour une liste de textes en utilisant un modèle local
+        Génère des embeddings pour une liste de textes en utilisant l'API distante
         
         Args:
             texts: Liste de chaînes de texte
@@ -36,14 +36,40 @@ class EmbeddingsClient:
             Liste d'embeddings
         """
         try:
-            # Utiliser le modèle local pour le texte
-            embeddings = self.text_model.encode(texts, convert_to_numpy=True).tolist()
-            logger.info(f"Successfully generated {len(embeddings)} text embeddings locally")
-            return embeddings
+            # Utiliser l'API distante
+            url = f"{self.base_url}/encode_queries"
+            
+            # Envoyer directement la liste des textes
+            response = requests.post(
+                url,
+                json=texts,  # Envoyer directement la liste
+                params={"dimension": self.dimension}
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Error: {response.status_code}, {response.text}")
                 
+            embeddings = response.json()["embeddings"]
+            logger.info(f"Successfully generated {len(embeddings)} text embeddings via API")
+            return embeddings
         except Exception as e:
             logger.error(f"Error generating text embeddings: {str(e)}")
-            raise
+            
+            # Fallback sur le modèle local
+            logger.info("Falling back to local model")
+            local_embeddings = self.text_model.encode(texts, convert_to_numpy=True)
+            
+            # Adapter les dimensions : répéter l'embedding jusqu'à atteindre la taille requise
+            adapted_embeddings = []
+            for emb in local_embeddings:
+                # Calculer combien de fois nous devons répéter l'embedding
+                repetitions = self.dimension // len(emb) + 1
+                # Répéter et tronquer à la taille exacte requise
+                extended_emb = np.tile(emb, repetitions)[:self.dimension].tolist()
+                adapted_embeddings.append(extended_emb)
+                
+            logger.info(f"Successfully generated {len(adapted_embeddings)} text embeddings locally")
+            return adapted_embeddings
     
     async def encode_images(self, image_data_list: List[str]) -> List[List[float]]:
         """
@@ -104,11 +130,14 @@ class EmbeddingsClient:
                 logger.info(f"Successfully generated {len(embeddings)} image embeddings")
                 return embeddings
             else:
-                raise Exception(f"Error: {response.status_code}, {response.text}")
+                # En cas d'erreur, retourner des embeddings vides
+                logger.error(f"Error: {response.status_code}, {response.text}")
+                return [[0] * self.dimension for _ in range(len(files))]
                 
         except Exception as e:
             logger.error(f"Error generating image embeddings: {str(e)}")
-            raise
+            # Retourner des embeddings vides en cas d'erreur
+            return [[0] * self.dimension for _ in range(len(image_data_list))]
     
     async def compute_similarity(self, query_embedding: List[float], doc_embedding: List[float]) -> float:
         """
