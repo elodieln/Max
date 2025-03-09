@@ -4,7 +4,7 @@ How to use Max :
 1) Open the terminal at the root of your project's path and run the following command :<br>
    ```npm run dev```
    
-3) Open another terminal at the root of your project's path and run the following commands :<br>
+2) Open another terminal at the root of your project's path and run the following commands :<br>
    ```cd backend```<br>
    ```node server.js```
 
