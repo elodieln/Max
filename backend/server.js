@@ -9,6 +9,7 @@ import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import { PassThrough } from 'stream';
+import { json } from 'stream/consumers';
 
 // Charger les variables d'environnement depuis .env
 dotenv.config();
@@ -16,7 +17,11 @@ const AZURE_API_KEY = process.env.AZURE_API_KEY;
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const AZURE_ENDPOINTS = process.env.AZURE_ENDPOINTS;
-const OPENAI_APY_KEY = process.env.OPENAI_APY_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+console.log(OPENAI_API_KEY);
+
+
 
 // Inititaliser Azure OpenAI
 const client = new AzureOpenAI ({
@@ -27,7 +32,7 @@ const client = new AzureOpenAI ({
 
 //Initialiser OpenRouter
 const openai = new OpenAI ({
-  apiKey: OPENAI_APY_KEY,
+  apiKey: OPENAI_API_KEY,
   baseURL: "https://openrouter.ai/api/v1",
 })
 
@@ -88,38 +93,89 @@ async function getPineconeContext(question) {
   }
 }
 
+// Fonction utilitaire pour écrire un titre souligné
+function writeUnderlinedTitle(doc, title, options = {}) {
+  doc.font('Helvetica-Bold').fontSize(16).text(title, options);
+  // Dessiner une ligne sous le titre
+  const textWidth = doc.widthOfString(title);
+  const x = doc.x;
+  const y = doc.y;
+  doc.moveTo(x, y).lineTo(x + textWidth, y).strokeColor('#000').lineWidth(1).stroke();
+  doc.moveDown(0.5);
+}
+
 // Fonction pour générer un PDF à partir du JSON de ChatGPT
 function generatePDF(jsonData) {
-  const doc = new PDFDocument({autoFirstPage: false});
-  ////////////////////////////////a enlever 
-  //const pdfPath = './generated_fiche.pdf'; // Chemin temporaire pour le PDF
-  //doc.pipe(fs.createWriteStream(pdfPath));
+  const doc = new PDFDocument({autoFirstPage: false, margin: 50});
 
   // Générer le contenu du PDF
   doc.addPage();
   // Ajout du titre
-  doc.fontSize(18).text('Fiche de Révision', { align: 'center' });
-  doc.moveDown();
+  doc.font('Helvetica-Bold').fontSize(18).text(`Fiche : ${jsonData.cours["Titre du cours"]}`, { align: 'center' });
+  doc.moveDown(1);
 
   // Ajout du contenu du cours
-  doc.fontSize(12).text(`Titre du cours: ${jsonData.cours["Titre du cours"]}`);
-  doc.text(`Description: ${jsonData.cours["Description du cours"]}`);
-  doc.text(`Concepts clés: ${jsonData.cours["Concepts clés"].join(', ')}`);
-  doc.text(`Définition et formules: ${jsonData.cours["Définitions et Formules"].join(', ')}`);
-  doc.text(`Exemple concret: ${jsonData.cours["Exemple concret"]}`);
-  doc.text(`Points clés: ${jsonData.cours["Bullet points avec les concepts clés"].join(', ')}`);
-  doc.moveDown();
+  //doc.font('Helvetica').fontSize(12).text(`Titre du cours: ${jsonData.cours["Titre du cours"]}`);
+  writeUnderlinedTitle(doc, 'Description');
+  doc.font('Helvetica').fontSize(12).text(jsonData.cours["Description du cours"], {indent: 20 });
+  doc.moveDown(1);
+
+  writeUnderlinedTitle(doc, 'Concepts clés');
+  const concepts = jsonData.cours["Concepts clés"] || [];
+  concepts.forEach(item => {
+    doc.font('Helvetica').fontSize(12).text(`• ${item}`, { indent: 30 });
+  });
+  doc.moveDown(1);
+  
+  writeUnderlinedTitle(doc, 'Définitions et formules');
+  const defFormules = jsonData.cours["Définitions et Formules"] || jsonData.cours["Définition et formules"] || [];
+  defFormules.forEach(item => {
+    doc.font('Helvetica').fontSize(12).text(`• ${item}`, { indent: 30 });
+  });
+  doc.moveDown(1);
+
+  writeUnderlinedTitle(doc, 'Exemple concret');
+  doc.font('Helvetica').fontSize(12).text(jsonData.cours["Exemple concret"], {indent:20});
+  doc.moveDown(1);
+
+  writeUnderlinedTitle(doc, 'Points clés');
+  const bulletPoints =jsonData.cours["Bullet points avec les concepts clés"] || jsonData.cours["Les concepts clés"] || [];
+  bulletPoints.forEach(item => {
+    doc.font('Helvetica').fontSize(12).text(`• ${item}`, { indent: 30 });
+  })
+  doc.moveDown(2);
 
   // Ajout du QCM
-  doc.fontSize(14).text('QCM:');
-  jsonData.qcm.questions.forEach((question) => {
-    doc.fontSize(12).text(`Question ${question.numero}: ${question.question}`);
+  doc.addPage();
+  doc.font('Helvetica-Bold').fontSize(14).text('QCM');
+  doc.moveDown(1);
+  doc.font('Helvetica').fontSize(12);
+
+  jsonData.qcm.questions.forEach((question, idx) => {
+    doc.font('Helvetica-Bold').fontSize(12).text(`Question ${question.numero} : ${question.question}`, {indent: 10});
+    doc.moveDown(0.2);
+
+    doc.font('Helvetica').fontSize(12);
     question.choix.forEach((choix, index) => {
-      doc.text(`${index + 1}. ${choix}`);
+      doc.text(`${index + 1}. ${choix}`, {indent:20});
     });
-    doc.text(`Bonne réponse: ${question.bonne_reponse}`);
-    doc.text(`Explication: ${question.explication}`);
-    doc.moveDown();
+    doc.moveDown(0.2);
+
+    doc.text(`Bonne réponse: ${question.bonne_reponse}`, {indent:10});
+    doc.moveDown(0.2);
+    doc.text(`Explication: ${question.explication || question.explication || ''}`, {indent:10});
+    doc.moveDown(1);
+
+    // Séparateur entre les questions
+    if (idx !== jsonData.qcm.questions.length - 1) {
+      doc.moveTo(doc.page.margins.left, doc.y)
+         .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+         .strokeColor('#cccccc')
+         .lineWidth(0.5)
+         .stroke();
+      doc.moveDown(0.5);
+    }
+
   });
 
   // Finalisation du PDF
@@ -181,17 +237,6 @@ app.post('/generate-pdf', async (req, res) => {
       - Ta réponse doit être strictement au format JSON valide, sans texte supplémentaire.
     `;
 
-    // 3. Envoyer le prompt à ChatGPT pour obtenir le JSON
-    /*//////////////////////////////////////////////////////// VERSION AZURE////////////////
-    const response = await client.completions.create({
-      deployment:'gpt-4',
-      prompt: prompt,
-      
-    });
-    
-    //convertir la réponse en JSON
-    const jsonData = JSON.parse(response.choices[0].text);*/
-
     const response = await openai.chat.completions.create({
       model: 'google/gemini-2.0-flash-001',
       messages: [{ role: 'system', content: prompt }],
@@ -211,7 +256,7 @@ app.post('/generate-pdf', async (req, res) => {
 
     //configurer l'en tete pour forcer le telechargement
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="fiche_cours.pdf"');
+    res.setHeader('Content-Disposition', `attachment; filename="Fiche_cours.pdf"`);
     
     //envoyer le pdf en streaming
     doc.pipe(res);

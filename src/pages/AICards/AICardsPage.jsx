@@ -6,15 +6,12 @@ import './AICardsPage.css';
 
 const Chatbot = () => {
   const [question, setQuestion] = useState('');
-  //const [pdfUrl, setPdfUrl] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleGeneratePDF = async () => {
     setLoading(true);
     try{
       console.log('question =', question);
-      //const response = await axios.post('http://localhost:5000/generate-pdf', { question });
-      //setPdfUrl(response.data.pdfPath);
       const response = await axios.post(
         'http://localhost:5000/generate-pdf',
         {question},
@@ -29,7 +26,8 @@ const Chatbot = () => {
       // Créer un lien <a> et déclencher un clic pour télécharger automatiquement
       const link = document.createElement('a');
       link.href = pdfUrl;
-      link.setAttribute('download', 'fiche_cours.pdf');
+      
+      link.setAttribute('download', 'Fiche_cours');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
