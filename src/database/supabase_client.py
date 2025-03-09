@@ -4,6 +4,7 @@ from supabase import create_client
 import logging
 from typing import List, Dict, Any
 import json
+from src.utils.custom_logging import log_progress
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +82,13 @@ class SupabaseManager:
                 elif chunk['type'] == 'mixed':
                     mixed_chunks.append(chunk)
             
+            # Informer l'utilisateur du nombre de chunks par type
+            print(f"\n[INFO] Processing chunks for course '{course_name}' (ID: {course_id})")
+            print(f"[INFO] Found {len(text_chunks)} text chunks, {len(image_chunks)} image chunks, and {len(mixed_chunks)} mixed chunks")
+            
             # Traiter les chunks textuels
             if text_chunks:
-                logger.info(f"Processing {len(text_chunks)} text chunks")
+                print(f"[INFO] Processing text chunks...")
                 
                 # Extraire le contenu textuel
                 text_contents = [chunk['content'] for chunk in text_chunks]
@@ -92,7 +97,12 @@ class SupabaseManager:
                 text_embeddings = await embeddings_client.encode_text(text_contents)
                 
                 # Stocker les chunks avec leurs embeddings
+                total = len(text_chunks)
                 for i, (chunk, embedding) in enumerate(zip(text_chunks, text_embeddings)):
+                    # Afficher la progression tous les 10% ou pour le dernier item
+                    if i % max(1, total // 10) == 0 or i == total - 1:
+                        log_progress(i+1, total, prefix='Text Chunks:', suffix='Complete')
+                    
                     vector_data = {
                         'course_id': course_id,
                         'chunk_index': i,
@@ -106,11 +116,10 @@ class SupabaseManager:
                     
                     # Insertion dans Supabase
                     self.supabase.table('vectors').insert(vector_data).execute()
-                    logger.info(f"Stored text chunk {i} with embedding")
             
             # Traiter les chunks d'images
             if image_chunks:
-                logger.info(f"Processing {len(image_chunks)} image chunks")
+                print(f"[INFO] Processing image chunks...")
                 
                 # Extraire les données d'images
                 image_data_list = [chunk['content'] for chunk in image_chunks]
@@ -119,7 +128,12 @@ class SupabaseManager:
                 image_embeddings = await embeddings_client.encode_images(image_data_list)
                 
                 # Stocker les chunks avec leurs embeddings
+                total = len(image_chunks)
                 for i, (chunk, embedding) in enumerate(zip(image_chunks, image_embeddings)):
+                    # Afficher la progression tous les 10% ou pour le dernier item
+                    if i % max(1, total // 10) == 0 or i == total - 1:
+                        log_progress(i+1, total, prefix='Image Chunks:', suffix='Complete')
+                    
                     vector_data = {
                         'course_id': course_id,
                         'chunk_index': i + len(text_chunks),  # Continuer l'indexation
@@ -134,11 +148,10 @@ class SupabaseManager:
                     
                     # Insertion dans Supabase
                     self.supabase.table('vectors').insert(vector_data).execute()
-                    logger.info(f"Stored image chunk {i} with embedding")
             
             # Traiter les chunks mixtes (texte + image)
             if mixed_chunks:
-                logger.info(f"Processing {len(mixed_chunks)} mixed chunks")
+                print(f"[INFO] Processing {len(mixed_chunks)} mixed chunks...")
                 
                 # Extraire le contenu textuel
                 mixed_texts = [chunk['content'] for chunk in mixed_chunks]
@@ -147,7 +160,12 @@ class SupabaseManager:
                 mixed_text_embeddings = await embeddings_client.encode_text(mixed_texts)
                 
                 # Stocker les chunks avec leurs embeddings
+                total = len(mixed_chunks)
                 for i, (chunk, embedding) in enumerate(zip(mixed_chunks, mixed_text_embeddings)):
+                    # Afficher la progression tous les 10% ou pour le dernier item
+                    if i % max(1, total // 10) == 0 or i == total - 1:
+                        log_progress(i+1, total, prefix='Mixed Chunks:', suffix='Complete')
+                    
                     vector_data = {
                         'course_id': course_id,
                         'chunk_index': i + len(text_chunks) + len(image_chunks),  # Continuer l'indexation
@@ -162,9 +180,8 @@ class SupabaseManager:
                     
                     # Insertion dans Supabase
                     self.supabase.table('vectors').insert(vector_data).execute()
-                    logger.info(f"Stored mixed chunk {i} with embedding")
             
-            logger.info(f"Successfully stored all chunks for course '{course_name}'")
+            print(f"[INFO] Successfully stored all chunks for course '{course_name}'")
                     
         except Exception as e:
             logger.error(f"Failed to store chunks with embeddings: {str(e)}")
@@ -176,7 +193,14 @@ class SupabaseManager:
             course_id = await self.get_course_id(course_name)
             
             # Stocker les chunks avec un index
+            total = len(chunks)
+            print(f"[INFO] Storing {total} chunks for course '{course_name}'")
+            
             for index, chunk in enumerate(chunks):
+                # Afficher la progression tous les 5% ou pour le dernier item
+                if index % max(1, total // 20) == 0 or index == total - 1:
+                    log_progress(index+1, total, prefix='Storing Chunks:', suffix='Complete')
+                
                 vector_data = {
                     'course_id': course_id,
                     'chunk_index': index,
@@ -195,7 +219,6 @@ class SupabaseManager:
                     vector_data['is_multimodal'] = True
 
                 self.supabase.table('vectors').insert(vector_data).execute()
-                logger.info(f"Stored {chunk['type']} chunk {index} for page {chunk['page_number']}")
                     
         except Exception as e:
             logger.error(f"Failed to store chunks: {str(e)}")
@@ -218,29 +241,6 @@ class SupabaseManager:
         Recherche des vectors par similarité avec l'embedding de requête
         """
         try:
-            # Convertir l'embedding en format PostgreSQL
-            embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
-            
-            # Requête SQL pour la recherche vectorielle
-            query = f"""
-            SELECT 
-                id, 
-                course_id, 
-                chunk_text, 
-                chunk_type,
-                page_number, 
-                metadata,
-                image_data,
-                1 - (embedding <=> '{embedding_str}') as similarity
-            FROM 
-                vectors
-            WHERE
-                embedding IS NOT NULL
-            ORDER BY 
-                embedding <=> '{embedding_str}'
-            LIMIT {top_k}
-            """
-            
             # Exécuter la requête
             result = self.supabase.rpc(
                 'match_documents', 

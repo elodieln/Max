@@ -17,6 +17,7 @@ node_modules
 dist
 dist-ssr
 venv/
+mon_envi/
 
 # Fichiers locaux
 *.local
