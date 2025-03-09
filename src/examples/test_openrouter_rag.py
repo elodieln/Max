@@ -42,9 +42,9 @@ async def test_openrouter_rag():
         
         # Une fois le PDF traité, vous pouvez poser des questions
         questions = [
-            "Quel est le problème principal mentionné dans la présentation?",
-            "Explique la technologie RAG utilisée dans le projet MAX",
-            "Quels sont les personas mentionnés dans la présentation?"
+            "Quels sont les éléments constitutifs de la chaîne d’acquisition de données présentée ?",
+            "Quelles sont les différences principales entre un capteur actif et un capteur passif ?",
+            "Comment le conditionnement d’un signal est-il réalisé dans le contexte de cette présentation ?"
         ]
         
         for question in questions:

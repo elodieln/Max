@@ -39,7 +39,7 @@ class GeminiClient:
                     base_url="https://openrouter.ai/api/v1",
                     api_key=self.api_key
                 )
-                self.model = "google/gemini-1.5-flash"  # ou "google/gemini-2.0-flash-001" selon disponibilité
+                self.model = "google/gemini-2.0-flash-001"  # ou "google/gemini-2.0-flash-001" selon disponibilité
                 logger.info(f"Initialized OpenRouter client with {self.model}")
             except Exception as e:
                 if not GeminiClient._service_error_reported:
