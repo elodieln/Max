@@ -1,0 +1,228 @@
+/* Conteneur principal avec espacement explicite */
+.favorites-page-wrapper {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px); /* Garantir une hauteur minimale pour éviter des problèmes d'affichage */
+  }
+  
+  /* Titre principal */
+  .favorites-page-title {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0 0 30px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Message quand aucun favori n'est présent */
+  .no-favorites-message {
+    background-color: white;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .no-favorites-message p {
+    margin-bottom: 15px;
+    color: #555;
+    font-size: 16px;
+  }
+  
+  /* Layout à deux colonnes pour le contenu principal */
+  .favorites-content {
+    display: flex;
+    height: 600px; /* Hauteur fixe pour éviter les problèmes de redimensionnement */
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  
+  /* Sidebar avec la liste des favoris */
+  .favorites-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .sidebar-title {
+    padding: 15px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .favorites-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .favorite-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: background-color 0.2s ease;
+  }
+  
+  .favorite-item:hover {
+    background-color: #f0f7f8;
+  }
+  
+  .favorite-item.selected {
+    background-color: #e0f2f3;
+    border-left: 4px solid #007179;
+    padding-left: 11px; /* 15px - 4px border */
+  }
+  
+  .favorite-info {
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .favorite-title {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .favorite-date {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+  }
+  
+  .remove-favorite {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 10px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  
+  .remove-favorite:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Zone principale pour afficher le PDF sélectionné */
+  .favorites-main {
+    flex: 1;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .selected-file-viewer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .file-header {
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .file-title {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .file-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .action-button {
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+  
+  .view-button {
+    background-color: #007179;
+    color: white;
+  }
+  
+  .view-button:hover {
+    background-color: #00565c;
+  }
+  
+  .download-button {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  
+  .download-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .pdf-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #f0f0f0;
+  }
+  
+  .pdf-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  
+  .empty-selection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 16px;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .favorites-content {
+      flex-direction: column;
+      height: auto;
+    }
+    
+    .favorites-sidebar {
+      width: 100%;
+      height: 300px;
+    }
+    
+    .favorites-main {
+      height: 500px;
+    }
+  }
