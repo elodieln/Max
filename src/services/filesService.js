@@ -100,43 +100,42 @@ export const removeFromFavorites = async (fileId) => {
   }
 };
 
-// Fonction pour récupérer toutes les fiches favorites
 export const getFavoriteFiles = async () => {
   try {
-    // On récupère d'abord les IDs des favoris
-    const { data: favoritesData, error: favoritesError } = await supabase
+    // Récupérer les IDs des fiches sauvegardées
+    const { data: savedCardsData, error: savedCardsError } = await supabase
       .from('saved_cards')
-      .select('card_id');
+      .select('card_id')
+      .eq('user_email', 'elisa.hagege@edu.ece.fr');
       
-    if (favoritesError) {
-      console.error("Erreur lors de la récupération des favoris:", favoritesError);
+    if (savedCardsError) {
+      console.error("Erreur lors de la récupération des favoris:", savedCardsError);
       throw new Error("Impossible de récupérer les favoris");
     }
     
-    // Si aucun favori, on retourne un tableau vide
-    if (!favoritesData || favoritesData.length === 0) {
+    // Si aucun favori, retourner un tableau vide
+    if (!savedCardsData || savedCardsData.length === 0) {
       return [];
     }
     
-    // On extrait les IDs des fichiers favoris
-    const favoriteIds = favoritesData.map(fav => fav.card_id);
+    // Extraire les IDs des fiches favoris
+    const cardIds = savedCardsData.map(item => item.card_id);
     
-    // On récupère les détails des fichiers favoris
-    const { data: filesData, error: filesError } = await supabase
+    // Récupérer les données complètes des fiches depuis la table cards
+    const { data: cardsData, error: cardsError } = await supabase
       .from('cards')
       .select('*')
-      .in('id', favoriteIds)
-      .order('created_at', { ascending: false });
+      .in('id', cardIds);
       
-    if (filesError) {
-      console.error("Erreur lors de la récupération des fichiers favoris:", filesError);
+    if (cardsError) {
+      console.error("Erreur lors de la récupération des fiches:", cardsError);
       throw new Error("Impossible de récupérer les détails des favoris");
     }
     
-    return filesData;
+    return cardsData || [];
   } catch (error) {
     console.error("Erreur lors de la récupération des favoris:", error);
-    throw error;
+    return [];
   }
 };
 

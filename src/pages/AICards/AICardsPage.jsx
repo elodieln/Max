@@ -15,6 +15,8 @@ const AICardsPage = () => {
   // État pour l'historique des fiches
   const [recentFiles, setRecentFiles] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  // Nouvel état pour suivre les fiches favorites dans l'historique
+  const [filesFavorites, setFilesFavorites] = useState({});
 
   // Charger l'historique des fiches au chargement du composant
   useEffect(() => {
@@ -25,6 +27,8 @@ const AICardsPage = () => {
   const fetchRecentFiles = async () => {
     try {
       setLoadingHistory(true);
+      
+      // Récupérer toutes les fiches
       const { data, error } = await supabase
         .from('cards')
         .select('*')
@@ -36,6 +40,18 @@ const AICardsPage = () => {
       }
 
       setRecentFiles(data || []);
+      
+      // Vérifier pour chaque fiche si elle est en favoris
+      const favorites = {};
+      if (data && data.length > 0) {
+        await Promise.all(data.map(async (file) => {
+          const isFav = await isFileInFavorites(file.id);
+          favorites[file.id] = isFav;
+        }));
+      }
+      
+      setFilesFavorites(favorites);
+      
     } catch (err) {
       console.error("Erreur lors de la récupération des fichiers récents:", err);
     } finally {
@@ -140,6 +156,34 @@ const AICardsPage = () => {
     } catch (error) {
       console.error('Erreur lors de la modification des favoris:', error);
       setError(`Erreur: ${error.message}`);
+    }
+  };
+
+  // Nouvelle fonction pour basculer l'état de favori d'une fiche dans l'historique
+  const toggleHistoryItemFavorite = async (fileId, event) => {
+    // Empêcher l'événement de se propager (pour éviter d'ouvrir le fichier)
+    event.stopPropagation();
+    
+    try {
+      // Vérifier l'état actuel
+      const currentIsFavorite = filesFavorites[fileId] || false;
+      
+      // Mettre à jour l'UI de manière optimiste
+      setFilesFavorites(prev => ({
+        ...prev,
+        [fileId]: !currentIsFavorite
+      }));
+      
+      // Mettre à jour la base de données
+      if (currentIsFavorite) {
+        await removeFromFavorites(fileId);
+      } else {
+        await addToFavorites(fileId);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la modification des favoris:', error);
+      // Revenir à l'état précédent en cas d'erreur
+      fetchRecentFiles();
     }
   };
 
@@ -260,7 +304,24 @@ const AICardsPage = () => {
                           })}
                         </p>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 items-center">
+                        {/* Ajout de l'étoile de favori */}
+                        <button 
+                          onClick={(e) => toggleHistoryItemFavorite(file.id, e)}
+                          className="focus:outline-none"
+                          aria-label={filesFavorites[file.id] ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        >
+                          {filesFavorites[file.id] ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFD700" width="20" height="20">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#808080" width="20" height="20">
+                              <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z" />
+                            </svg>
+                          )}
+                        </button>
+                        
                         <a 
                           href={file.pdf_url}
                           target="_blank"
@@ -270,6 +331,7 @@ const AICardsPage = () => {
                         >
                           Voir
                         </a>
+                        
                         <a 
                           href={file.pdf_url}
                           download={`Fiche_${file.name.replace(/\s+/g, '_')}.pdf`}

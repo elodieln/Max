@@ -1,69 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import './CardsFavoritesPage.css';
+// Correction du chemin d'importation - utiliser le chemin correct vers filesService
 import { getFavoriteFiles, removeFromFavorites } from '../../../services/filesService';
+import { supabase } from '../../../lib/supabase';
 
 const CardsFavoritesPage = () => {
   const [favoriteFiles, setFavoriteFiles] = useState([]);
-  const [selectedFileId, setSelectedFileId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedFileId, setSelectedFileId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Charger les fichiers favoris depuis Supabase
   useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        setLoading(true);
-        const files = await getFavoriteFiles();
-        setFavoriteFiles(files);
-        
-        // Sélectionner automatiquement le premier favori s'il existe
-        if (files.length > 0) {
-          setSelectedFileId(files[0].id);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des favoris:', error);
-        setError("Impossible de charger vos fiches favorites");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadFavorites();
+    // Charger les favoris depuis Supabase au lieu du localStorage
+    fetchFavoriteFiles();
   }, []);
-  
+
+  const fetchFavoriteFiles = async () => {
+    try {
+      setLoading(true);
+      // Utiliser la fonction de votre service qui récupère les favoris depuis Supabase
+      const files = await getFavoriteFiles();
+      
+      if (files && files.length > 0) {
+        setFavoriteFiles(files);
+        // Sélectionner automatiquement le premier favori
+        setSelectedFileId(files[0].id);
+      } else {
+        setFavoriteFiles([]);
+        setSelectedFileId(null);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la récupération des favoris:", err);
+      setError("Impossible de charger vos fiches favorites");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Obtenir le fichier actuellement sélectionné
   const selectedFile = favoriteFiles.find(file => file.id === selectedFileId);
 
-  // Fonction pour retirer un fichier des favoris
+  // Fonction pour retirer un fichier des favoris via Supabase
   const handleRemoveFromFavorites = async (fileId) => {
     try {
+      // Appeler la fonction de votre service qui supprime les favoris de Supabase
       await removeFromFavorites(fileId);
       
-      // Mettre à jour la liste des favoris
-      setFavoriteFiles(prev => prev.filter(file => file.id !== fileId));
+      // Mettre à jour l'état local après la suppression
+      const updatedFavorites = favoriteFiles.filter(file => file.id !== fileId);
+      setFavoriteFiles(updatedFavorites);
       
       // Si le fichier actuellement sélectionné est retiré, sélectionner le premier favori restant
       if (fileId === selectedFileId) {
-        const remainingFiles = favoriteFiles.filter(file => file.id !== fileId);
-        setSelectedFileId(remainingFiles.length > 0 ? remainingFiles[0].id : null);
+        setSelectedFileId(updatedFavorites.length > 0 ? updatedFavorites[0].id : null);
       }
+    } catch (err) {
+      console.error("Erreur lors de la suppression du favori:", err);
+      setError("Impossible de retirer cette fiche des favoris");
+    }
+  };
+
+  // Fonction pour télécharger un fichier
+  const handleDownload = (file) => {
+    if (!file || !file.pdf_url) {
+      console.error("URL de téléchargement manquante");
+      setError("Impossible de télécharger cette fiche: URL manquante");
+      return;
+    }
+
+    try {
+      // Créer un lien avec l'URL du PDF
+      const link = document.createElement('a');
+      link.href = file.pdf_url;
+      
+      // Définir un nom de fichier basé sur le nom de la fiche
+      const fileName = `Fiche_${file.name.replace(/\s+/g, '_')}.pdf`;
+      link.setAttribute('download', fileName);
+      
+      // Ajouter le lien au document, cliquer dessus, puis le supprimer
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
-      console.error('Erreur lors du retrait des favoris:', error);
-      setError(`Erreur: ${error.message}`);
+      console.error("Erreur lors du téléchargement:", error);
+      setError("Erreur lors du téléchargement de la fiche");
     }
   };
 
   return (
     <div className="favorites-page-wrapper">
-      <h1 className="favorites-page-title">Fiches et Quizz</h1>
+      <h1 className="favorites-page-title">Mes fiches favorites</h1>
       
       {loading ? (
-        <div className="favorites-loading">
-          <p>Chargement de vos fiches favorites...</p>
-        </div>
-      ) : error ? (
-        <div className="favorites-error">
-          <p>{error}</p>
+        <div className="loading-message">
+          <p>Chargement de vos favoris...</p>
         </div>
       ) : favoriteFiles.length === 0 ? (
         <div className="no-favorites-message">
@@ -84,10 +114,10 @@ const CardsFavoritesPage = () => {
                   <div className="favorite-info">
                     <h3 className="favorite-title">{file.name}</h3>
                     <p className="favorite-date">
-                      Généré le {new Date(file.created_at).toLocaleDateString('fr-FR', { 
-                        year: 'numeric', 
-                        month: '2-digit', 
+                      Généré le {new Date(file.created_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
@@ -123,13 +153,12 @@ const CardsFavoritesPage = () => {
                     >
                       Ouvrir dans un nouvel onglet
                     </a>
-                    <a 
-                      href={selectedFile.pdf_url} 
-                      download={`Fiche_${selectedFile.name.replace(/\s+/g, '_')}.pdf`}
+                    <button 
+                      onClick={() => handleDownload(selectedFile)}
                       className="action-button download-button"
                     >
                       Télécharger
-                    </a>
+                    </button>
                   </div>
                 </div>
                 <div className="pdf-container">
@@ -147,6 +176,13 @@ const CardsFavoritesPage = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+          <button onClick={() => setError(null)}>×</button>
         </div>
       )}
     </div>
