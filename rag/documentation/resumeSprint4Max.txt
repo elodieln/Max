@@ -1,0 +1,200 @@
+# Résumé du Sprint 4 - Moteur de recherche et récupération
+
+## Objectif du sprint
+Ce sprint avait pour objectif de construire le système de recherche et de récupération des informations pertinentes pour le RAG Multimodal "Max", un assistant IA destiné à aider les élèves en école d'ingénieur en électronique. Les développements réalisés s'appuient sur les bases établies lors des sprints précédents, particulièrement le système d'embeddings multimodal mis en place pendant le Sprint 3.
+
+## Composants développés
+
+### 1. Service de recherche (Search Service)
+Nous avons créé un service de recherche complet qui exploite les embeddings stockés dans Supabase pour trouver les contenus les plus pertinents.
+
+**Fichier principal** : `src/search/search_service.py`
+
+La classe `SearchService` implémente les fonctionnalités suivantes :
+- Recherche sémantique basée sur une requête textuelle via `search()`
+- Recherche avec un embedding existant via `search_with_embedding()`
+- Récupération des détails des pages depuis Supabase
+- Utilisation de fonctions RPC pour la recherche par similarité vectorielle
+- Pattern singleton pour garantir une instance unique du service
+
+Aspects techniques notables :
+- Utilisation de l'extension pgvector dans Supabase pour la recherche vectorielle
+- Intégration avec le générateur d'embeddings pour convertir les requêtes textuelles
+- Système de seuils de similarité pour filtrer les résultats non pertinents
+- Jointure avec la table des cours pour enrichir les résultats
+
+### 2. Récupérateur de contenu (Content Retriever)
+Nous avons développé un module dédié à la récupération du contenu original des pages et des cours depuis Supabase.
+
+**Fichier principal** : `src/search/content_retriever.py`
+
+La classe `ContentRetriever` implémente les fonctionnalités suivantes :
+- Récupération du contenu complet d'une page via `get_page_content()`
+- Récupération des informations d'un cours via `get_course_info()`
+- Récupération de toutes les pages d'un cours via `get_course_pages()`
+- Récupération des pages environnantes pour le contexte via `get_context_pages()`
+- Vérification de l'existence des images associées aux pages
+
+Points clés de l'implémentation :
+- Enrichissement des données de page avec les informations du cours
+- Récupération contextuelle des pages adjacentes pour améliorer la compréhension
+- Vérification de l'existence des ressources locales (images)
+- Gestion robuste des erreurs et logging détaillé
+
+### 3. Moteur RAG (Retrieval-Augmented Generation)
+Nous avons créé un moteur RAG central qui combine recherche, récupération de contenu et préparation du contexte pour le LLM.
+
+**Fichier principal** : `src/search/rag_engine.py`
+
+La classe `RAGEngine` implémente les fonctionnalités suivantes :
+- Récupération d'informations pertinentes pour une requête via `retrieve()`
+- Construction d'un contexte formaté pour le LLM via `build_context_for_llm()`
+- Enrichissement des résultats de recherche avec le contenu complet
+- Intégration des pages de contexte pour améliorer la qualité des réponses
+- Structuration des métadonnées pour faciliter la génération de réponses pédagogiques
+
+Caractéristiques importantes :
+- Organisation du contexte par blocs sémantiques (cours/page)
+- Pondération des résultats selon leur pertinence
+- Inclusion intelligente du contexte environnant pour les résultats principaux
+- Format optimisé pour le prompt engineering ultérieur
+
+### 4. Optimisations de recherche
+Nous avons implémenté plusieurs optimisations pour améliorer les performances et la fiabilité du moteur de recherche.
+
+**Fichier principal** : `src/search/search_optimizations.py`
+
+Les optimisations incluent :
+- Mise en cache des embeddings de requêtes fréquentes via `@lru_cache`
+- Décorateur pour mesurer le temps d'exécution des fonctions
+- Traitement par lots pour les requêtes multiples via `process_queries_in_batch()`
+- Fonction pour regrouper les requêtes similaires et réduire les appels d'API
+
+Avantages obtenus :
+- Réduction du temps de réponse pour les requêtes répétées
+- Meilleure gestion des ressources lors du traitement de multiples requêtes
+- Visibilité sur les performances des composants critiques
+- Prévention de la surcharge des API externes
+
+## Scripts de test et validation
+
+### 1. Test du moteur RAG
+Nous avons développé un script pour tester le moteur RAG avec diverses requêtes.
+
+**Fichier** : `tests/test_rag_engine.py`
+
+Fonctionnalités :
+- Test de recherche avec une requête spécifique
+- Affichage détaillé des résultats trouvés
+- Test de génération de contexte pour le LLM
+- Validation du format et du contenu des résultats
+
+### 2. Test des requêtes sur les cours
+Nous avons créé un script pour tester de multiples requêtes liées aux cours d'électronique.
+
+**Fichier** : `tests/test_course_queries.py`
+
+Fonctionnalités :
+- Test avec un ensemble de requêtes prédéfinies pertinentes pour l'électronique
+- Filtrage par cours spécifique
+- Affichage tabulaire des résultats
+- Mode verbeux pour l'inspection du contexte généré
+- Résumé des statistiques de réussite
+
+### 3. Test des optimisations de recherche
+Nous avons implémenté un script pour évaluer l'efficacité des optimisations.
+
+**Fichier** : `tests/test_search_optimizations.py`
+
+Fonctionnalités :
+- Comparaison des performances avec et sans optimisations
+- Test du cache d'embeddings
+- Test du traitement par lots
+- Mesure des temps d'exécution et calcul des améliorations
+
+### 4. Traitement de documents complets
+Nous avons amélioré le script de traitement des documents pour intégrer le nouveau système de recherche.
+
+**Fichier** : `tests/process_course_document.py`
+
+Fonctionnalités :
+- Traitement complet d'un document PDF
+- Extraction du texte et des images
+- Génération et stockage des embeddings
+- Test du moteur de recherche avec des requêtes pertinentes
+- Statistiques sur le taux de réussite du traitement
+
+## Intégration avec Supabase
+
+### Structure de données
+Le système utilise efficacement la structure de données dans Supabase :
+
+1. **Table `courses`** (existante) :
+   - Contient les métadonnées des cours (nom, année, etc.)
+   - Référencée pour enrichir les résultats de recherche
+
+2. **Table `pages`** (existante) :
+   - Stocke le contenu textuel et les chemins d'images des pages
+   - Utilisée pour récupérer le contenu original lors de la recherche
+
+3. **Table `page_embeddings`** (existante) :
+   - Contient les embeddings vectoriels des pages
+   - Utilisée pour la recherche par similarité vectorielle
+
+### Fonctions RPC
+Le système exploite les fonctions RPC de Supabase pour la recherche vectorielle :
+
+- **match_page_embeddings** : Calcule la similarité cosinus entre l'embedding de la requête et les embeddings stockés
+
+## Défis rencontrés et solutions
+
+### 1. Performance de recherche
+**Problème** : Temps de réponse élevé lors de la recherche dans de grandes collections d'embeddings.
+
+**Solution** : 
+- Implémentation d'un système de cache pour les requêtes fréquentes
+- Utilisation de la fonction RPC optimisée dans Supabase
+- Ajout de seuils de similarité pour limiter les résultats non pertinents
+
+### 2. Contexte pour le LLM
+**Problème** : Difficulté à construire un contexte optimal pour le LLM qui soit à la fois complet et concis.
+
+**Solution** : 
+- Développement d'un système de pondération des résultats par similarité
+- Inclusion intelligente des pages de contexte avec une pondération réduite
+- Formatage structuré du contexte avec des séparateurs clairs entre les sources
+
+### 3. Intégration des ressources visuelles
+**Problème** : Difficulté à intégrer efficacement les informations visuelles dans les résultats de recherche.
+
+**Solution** : 
+- Vérification de l'existence des images locales pour chaque page
+- Enrichissement des métadonnées avec des informations sur les ressources visuelles disponibles
+- Préparation pour l'intégration future dans les réponses générées
+
+## Améliorations futures
+
+1. **Recherche hybride** : Combiner la recherche vectorielle avec une recherche textuelle traditionnelle pour améliorer la précision.
+
+2. **Filtrage avancé** : Ajouter des capacités de filtrage par cours, année, ou autres métadonnées.
+
+3. **Contextualisation dynamique** : Ajuster automatiquement la taille du contexte en fonction de la complexité de la requête.
+
+4. **Cache distribué** : Implémenter un système de cache distribué pour les déploiements à grande échelle.
+
+5. **Recherche multimodale directe** : Permettre des recherches à partir d'images ou de combinaisons texte/image.
+
+## Conclusion
+
+Le Sprint 4 a été complété avec succès, ayant accompli toutes les tâches prévues :
+
+1. ✅ Développer le système de recherche par similarité des embeddings
+2. ✅ Créer le mécanisme de récupération du contenu original
+3. ✅ Optimiser les performances de recherche
+4. ✅ Tester le système de recherche avec des requêtes variées
+
+Le système de recherche et de récupération est maintenant pleinement fonctionnel et prêt pour l'intégration avec le système de génération de réponses éducatives prévu dans le Sprint 5. L'architecture mise en place offre un bon équilibre entre performance, précision et flexibilité, tout en étant facile à maintenir et à étendre.
+
+Les tests montrent que le système est capable de retrouver efficacement les informations pertinentes à partir de requêtes en langage naturel, avec des scores de similarité significatifs pour les résultats pertinents. Le mécanisme de contextualisation permet d'enrichir les résultats avec des informations complémentaires, améliorant ainsi la qualité potentielle des réponses générées.
+
+Ce sprint constitue une étape cruciale dans le développement du RAG multimodal "Max", car il relie efficacement les phases d'ingestion et de traitement des documents aux futures capacités de génération de réponses pédagogiques.

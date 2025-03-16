@@ -1,0 +1,195 @@
+# Résumé du Sprint 6 - API et intégration
+
+## Objectif du sprint
+Le Sprint 6 avait pour objectif de rendre le système RAG Multimodal "Max" accessible via une API REST. Cette étape était cruciale pour permettre l'intégration avec l'interface utilisateur développée par l'équipe frontend en Vite.
+
+## Composants développés
+
+### 1. Structure de l'API FastAPI
+Nous avons mis en place une architecture d'API modulaire en utilisant FastAPI, avec séparation des préoccupations par routeurs thématiques :
+
+**Fichier principal** : `src/api/app.py`
+- Configuration de l'application FastAPI
+- Middleware CORS pour l'intégration frontend
+- Gestion des événements de démarrage et d'arrêt
+- Gestion globale des exceptions
+- Intégration des différents routeurs
+
+**Structure des dossiers** :
+```
+src/api/
+├── __init__.py
+├── app.py
+├── optimizations.py
+└── routers/
+    ├── __init__.py
+    ├── health.py
+    ├── queries.py
+    ├── documents.py
+    ├── embeddings.py
+```
+
+### 2. Routeurs spécialisés
+Nous avons créé quatre routeurs pour organiser logiquement les fonctionnalités de l'API :
+
+#### Routeur Health Check (`health.py`)
+- Endpoint `/health` pour vérifier l'état de fonctionnement de l'API
+- Retourne des informations sur la version et le statut
+
+#### Routeur de Requêtes (`queries.py`)
+- Endpoint POST `/queries/ask` pour poser des questions à Max
+- Endpoint GET `/queries/models` pour lister les modèles LLM disponibles
+- Intégration avec le générateur de réponses du Sprint 5
+
+#### Routeur de Documents (`documents.py`)
+- Endpoint POST `/documents/process` pour télécharger et traiter des PDF
+- Endpoint GET `/documents/courses` pour lister les cours disponibles
+- Intégration avec l'extracteur PDF du Sprint 2 et le générateur d'embeddings du Sprint 3
+
+#### Routeur d'Embeddings (`embeddings.py`)
+- Endpoint POST `/embeddings/search` pour rechercher des contenus par similarité
+- Endpoint GET `/embeddings/stats` pour obtenir des statistiques sur les embeddings
+- Intégration avec le service de recherche du Sprint 4
+
+### 3. Optimisations de performance
+Nous avons implémenté plusieurs mécanismes pour améliorer les performances de l'API :
+
+**Fichier** : `src/api/optimizations.py`
+- Décorateur `rate_limiter` pour limiter le nombre d'appels à une fonction dans un intervalle donné
+- Fonction `timed_lru_cache` pour mettre en cache les résultats avec une durée de vie définie
+- Gestion asynchrone pour les fonctions qui pourraient bloquer le thread principal
+
+### 4. Configuration
+Nous avons mis en place un système de configuration pour gérer différents environnements :
+
+**Fichier** : `src/config/settings.py`
+- Classe `Settings` basée sur Pydantic pour la validation des configurations
+- Chargement automatique des variables d'environnement
+- Paramètres configurables pour l'API, les connexions aux services externes, et les limites
+
+### 5. Gestion des requêtes
+Nous avons défini des modèles Pydantic pour la validation des entrées et sorties de l'API :
+
+**Classes clés** :
+- `QueryRequest`: Valide les requêtes entrantes pour poser des questions
+- `QueryResponse`: Structure les réponses retournées aux utilisateurs
+- `ProcessResponse`: Fournit des informations sur le traitement des documents
+- `SearchRequest`: Valide les paramètres de recherche par embeddings
+
+### 6. Tests
+Nous avons créé un script de test complet pour valider toutes les fonctionnalités de l'API :
+
+**Fichier** : `tests/test_api.py`
+- Test du health check
+- Test de la récupération des modèles LLM
+- Test de génération de réponses
+- Test de récupération des cours
+- Test des statistiques d'embeddings
+- Test de recherche par embeddings
+- Test d'upload et de traitement de document
+
+### 7. Documentation
+Nous avons produit une documentation détaillée pour l'équipe frontend :
+
+**Fichier** : `docs/api_documentation.md`
+- Description des endpoints
+- Format des requêtes et réponses
+- Codes d'erreur
+- Exemples d'intégration avec Axios pour le frontend Vite
+- Exemple de composant Vue pour illustrer l'utilisation
+
+## Intégration avec les composants existants
+
+### Intégration avec le générateur de réponses (Sprint 5)
+L'API utilise le générateur de réponses développé au Sprint 5 pour transformer les requêtes utilisateurs en réponses pédagogiques pertinentes. Nous avons veillé à maintenir tous les types de requêtes supportés (question, json, concept, cours, problème).
+
+### Intégration avec le moteur de recherche (Sprint 4)
+L'endpoint de recherche exploite les fonctionnalités du service de recherche développé au Sprint 4, permettant de trouver les pages les plus pertinentes pour une requête donnée en utilisant la similarité des embeddings.
+
+### Intégration avec le système d'embeddings (Sprint 3)
+Le traitement des documents PDF génère des embeddings multimodaux pour chaque page, en utilisant le client d'embeddings et le système de stockage développés au Sprint 3.
+
+### Intégration avec l'extracteur PDF (Sprint 2)
+L'endpoint de traitement de documents utilise l'extracteur PDF du Sprint 2 pour convertir les pages PDF en images et extraire leur contenu textuel.
+
+## Améliorations techniques
+
+### Gestion des exceptions
+Nous avons mis en place un système robuste de gestion des exceptions :
+- Middleware de logging pour tracer toutes les requêtes
+- Gestionnaire global d'exceptions pour éviter les crashs de l'API
+- Messages d'erreur explicites avec codes HTTP appropriés
+
+### Optimisation des performances
+Plusieurs optimisations ont été implémentées :
+- Cache pour les requêtes fréquentes
+- Limitation du taux de requêtes pour éviter la surcharge
+- Nettoyage automatique des fichiers temporaires après traitement
+
+### Sécurité
+Nous avons pris en compte plusieurs aspects de sécurité :
+- Validation stricte des entrées utilisateur avec Pydantic
+- Limitation de la taille des fichiers téléchargés
+- Structure permettant d'ajouter facilement une authentification
+
+## Flux de travail typiques
+
+### 1. Traitement d'un nouveau cours
+1. L'utilisateur télécharge un fichier PDF via l'endpoint `/documents/process`
+2. L'API extrait le texte et convertit les pages en images
+3. Les images sont optimisées et des embeddings sont générés
+4. Les informations sont stockées dans Supabase
+5. L'API retourne un récapitulatif du traitement
+
+### 2. Interrogation de Max
+1. L'utilisateur envoie une question via l'endpoint `/queries/ask`
+2. L'API utilise le moteur RAG pour trouver les informations pertinentes
+3. Le générateur de réponses produit une réponse pédagogique
+4. La réponse est retournée avec des métadonnées (modèle utilisé, temps de traitement)
+
+### 3. Recherche de contenu
+1. L'utilisateur envoie une requête de recherche via `/embeddings/search`
+2. L'API génère un embedding pour cette requête
+3. Une recherche par similarité est effectuée dans Supabase
+4. Les résultats les plus pertinents sont retournés, enrichis avec des informations sur les cours
+
+## Tests et validation
+
+### Méthodes de test
+Nous avons testé l'API de plusieurs façons :
+- Tests automatisés vérifiant toutes les routes
+- Tests manuels avec Swagger UI
+- Simulations de cas d'utilisation typiques
+
+### Résultats des tests
+Les tests ont démontré que l'API :
+- Répond correctement aux requêtes valides
+- Gère proprement les erreurs
+- Intègre correctement tous les composants développés dans les sprints précédents
+- Offre des performances satisfaisantes pour les cas d'utilisation prévus
+
+## Défis rencontrés et solutions
+
+### 1. Gestion des fichiers volumineux
+**Problème** : Les fichiers PDF peuvent être volumineux et leur traitement peut prendre du temps.
+**Solution** : Nous avons implémenté un système de traitement asynchrone et de nettoyage des fichiers temporaires.
+
+### 2. Format des réponses JSON
+**Problème** : Les réponses au format JSON du générateur pouvaient être difficiles à manipuler dans l'API.
+**Solution** : Nous avons ajouté un traitement spécifique pour extraire et valider les JSON dans les réponses.
+
+### 3. Optimisation des performances
+**Problème** : Certaines opérations (génération d'embeddings, recherche) peuvent être coûteuses en ressources.
+**Solution** : Mise en place de mécanismes de cache et de rate limiting pour optimiser les performances.
+
+## Conclusion
+
+Le Sprint 6 a permis de rendre accessible l'ensemble des fonctionnalités de Max via une API REST complète, bien documentée et optimisée. Cette API constitue le pont essentiel entre le backend RAG multimodal et l'interface utilisateur, facilitant l'intégration avec le frontend développé en Vite.
+
+Toutes les tâches prévues pour ce sprint ont été accomplies avec succès :
+1. ✅ Développement de l'API REST avec FastAPI
+2. ✅ Documentation détaillée de l'API pour l'équipe frontend
+3. ✅ Tests avec des cas d'utilisation réels
+4. ✅ Optimisation des performances de l'API
+
+L'API est maintenant prête à être utilisée par l'équipe frontend et constitue une base solide pour le prochain sprint qui se concentrera sur les tests et optimisations supplémentaires du système complet.

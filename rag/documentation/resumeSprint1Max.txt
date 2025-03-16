@@ -1,0 +1,112 @@
+# Résumé du Sprint 1 - Mise en place de l'infrastructure
+
+## Objectif du sprint
+Ce sprint visait à créer la structure de base du projet RAG Multimodal "Max", un assistant IA pour aider les élèves en école d'ingénieur en électronique, et à configurer les connexions aux services externes nécessaires.
+
+## Structure du projet
+Nous avons créé la structure de dossiers suivante:
+
+```
+max_rag_multimodal/
+├── config/
+├── data/
+│   └── images/
+├── src/
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── openrouter_client.py
+│   ├── embeddings/
+│   ├── processing/
+│   ├── storage/
+│   │   ├── __init__.py
+│   │   └── supabase_client.py
+│   ├── utils/
+│   └── main.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_connections.py
+│   └── test_tables.py
+├── venv/
+├── .env
+```
+
+## Environnement de développement
+- Création d'un environnement virtuel Python pour isoler les dépendances
+- Installation des bibliothèques principales:
+  - python-dotenv (gestion des variables d'environnement)
+  - supabase (client pour accéder à Supabase)
+  - requests (pour les appels API)
+  - numpy (pour les calculs numériques)
+  - Pillow (traitement d'images)
+  - PyMuPDF (manipulation de fichiers PDF)
+  - fastapi, uvicorn, pydantic (pour la future API)
+
+## Configuration des connexions externes
+
+### Configuration de Supabase
+- Implémentation d'un client Supabase avec pattern Singleton pour assurer une connexion unique à l'application
+- Utilisation des variables d'environnement pour les identifiants
+- Méthode d'accès centralisée via get_supabase_client()
+- Structure de tables dans Supabase:
+  1. Table `courses` (déjà existante):
+     - id (PK)
+     - name (text)
+     - pdf_url (text)
+     - photo_url (text)
+     - year (text)
+     - created_at (timestamp)
+  
+  2. Table `pages` (créée dans ce sprint):
+     - id (PK)
+     - course_id (FK vers courses.id)
+     - page_number (integer)
+     - image_path (text)
+     - content_text (text)
+     - created_at (timestamp)
+  
+  3. Table `page_embeddings` (créée dans ce sprint):
+     - id (PK)
+     - page_id (FK vers pages.id)
+     - embedding (float[])
+     - created_at (timestamp)
+
+### Configuration d'OpenRouter
+- Implémentation d'un client OpenRouter pour accéder à divers modèles LLM
+- Configuration via variables d'environnement
+- Fonctionnalités implémentées:
+  - get_available_models(): récupération des modèles disponibles
+  - generate_response(): génération de réponses via différents LLM
+
+## Tests et vérifications
+- Script de test pour vérifier la connexion à Supabase
+- Script de test pour vérifier la connexion à OpenRouter
+- Script de test pour confirmer l'existence des tables dans Supabase
+- Tous les tests ont été exécutés avec succès
+
+## Fichier principal
+- Création d'un point d'entrée src/main.py qui vérifie que l'environnement est correctement configuré
+- Affichage des informations de configuration de base
+
+## Variables d'environnement
+Nous avons mis en place un fichier .env avec les variables suivantes:
+- SUPABASE_URL: URL de l'instance Supabase
+- SUPABASE_KEY: Clé d'accès à Supabase
+- OPENROUTER_API_KEY: Clé d'API pour OpenRouter
+- DEFAULT_MODEL: Modèle LLM par défaut (gpt-3.5-turbo-16k)
+
+## Résultats des tests
+Tous les tests ont été exécutés avec succès:
+- Connexion à Supabase: ✅
+- Connexion à OpenRouter: ✅
+- Vérification des tables:
+  - Table 'courses': ✅
+  - Table 'pages': ✅
+  - Table 'page_embeddings': ✅
+
+## Réalisations du sprint
+Le Sprint 1 a été complété avec succès en accomplissant toutes les tâches prévues:
+1. ✅ Mise en place de l'environnement de développement
+2. ✅ Configuration de la connexion à Supabase
+3. ✅ Configuration de la connexion à OpenRouter
+4. ✅ Création de la structure nécessaire dans Supabase pour stocker les embeddings
+5. ✅ Test des connexions

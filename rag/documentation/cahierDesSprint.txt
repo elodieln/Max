@@ -1,0 +1,84 @@
+Cahier des Sprints pour le RAG Multimodal "Max"
+
+Sprint 1: Mise en place de l'infrastructure
+
+Objectif: Créer la structure du projet et configurer les connexions aux services externes
+Tâches:
+
+Mise en place de l'environnement de développement
+Configuration de la connexion à Supabase
+Configuration de la connexion à OpenRouter
+Création de la structure nécessaire dans Supabase pour stocker les embeddings
+Test des connexions
+
+
+
+Sprint 2: Traitement des documents
+
+Objectif: Développer le système d'extraction et de préparation des contenus des cours PDF
+Tâches:
+
+Développer un extracteur de contenu PDF
+Convertir les pages PDF en images pour le traitement multimodal
+Mettre en place un système de stockage des images extraites
+Tester l'extraction avec un cours d'exemple
+
+
+
+Sprint 3: Génération et stockage des embeddings
+
+Objectif: Implémenter le système d'embeddings multimodal
+Tâches:
+
+Intégrer l'API RAG Multimodal pour générer des embeddings d'images
+Développer le système de requêtes textuelles
+Créer le système de stockage des embeddings dans Supabase
+Tester la génération et le stockage des embeddings
+
+
+
+Sprint 4: Moteur de recherche et récupération
+
+Objectif: Construire le système de recherche et de récupération des informations pertinentes
+Tâches:
+
+Développer le système de recherche par similarité des embeddings
+Créer le mécanisme de récupération du contenu original
+Optimiser les performances de recherche
+Tester le système de recherche avec des requêtes variées
+
+
+
+Sprint 5: Génération de réponses éducatives
+
+Objectif: Créer le système de génération de réponses pédagogiques
+Tâches:
+
+Développer le prompt engineering pour des réponses éducatives
+Intégrer OpenRouter pour l'accès à différents LLMs
+Mettre en place un système de contrôle de la qualité des réponses
+Tester la génération de réponses sur différentes questions
+
+
+
+Sprint 6: API et intégration
+
+Objectif: Rendre le système accessible via une API REST
+Tâches:
+
+Développer l'API REST avec FastAPI
+Documenter l'API pour l'équipe frontend
+Tester l'API avec des cas d'utilisation réels
+Optimiser les performances de l'API
+
+
+
+Sprint 7: Tests et optimisations
+
+Objectif: Assurer la fiabilité et l'efficacité du système
+Tâches:
+
+Effectuer des tests de charge
+Optimiser les performances
+Améliorer la gestion des erreurs
+Documenter le système complet
