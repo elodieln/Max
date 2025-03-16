@@ -1,0 +1,131 @@
+# Résumé du Sprint 2 - Traitement des documents
+
+## Objectif du sprint
+Ce sprint avait pour objectif de développer le système d'extraction et de préparation des contenus des cours PDF pour le RAG Multimodal "Max", un assistant IA conçu pour aider les élèves en école d'ingénieur en électronique.
+
+## Composants développés
+
+### 1. Extracteur de contenu PDF
+Nous avons créé un extracteur PDF capable de :
+- Lire des fichiers PDF
+- Extraire le texte de chaque page
+- Convertir chaque page en image de haute qualité
+- Organiser les images extraites dans une structure de dossiers cohérente
+
+**Fichier principal** : `src/processing/pdf_extractor.py`
+
+La classe `PDFExtractor` implémente les fonctionnalités suivantes :
+- Initialisation avec configuration du répertoire de stockage des images
+- Extraction du contenu texte et conversion en images via PyMuPDF (fitz)
+- Amélioration de la qualité des images avec un facteur de zoom configurable
+- Sauvegarde des métadonnées et chemins d'images pour chaque page
+- Intégration avec Supabase pour le stockage des informations extraites
+
+### 2. Utilitaires de manipulation d'images
+Nous avons développé un module d'utilitaires pour optimiser les images avant la génération d'embeddings :
+
+**Fichier** : `src/utils/image_utils.py`
+
+Fonctionnalités :
+- Redimensionnement d'images tout en conservant le ratio d'aspect
+- Optimisation des images pour la génération d'embeddings
+- Conversion en format RGB si nécessaire
+- Réduction de la taille des fichiers tout en maintenant une qualité suffisante
+
+### 3. Scripts de test
+Nous avons créé plusieurs scripts de test pour valider notre système :
+
+**Fichier principal** : `tests/test_pdf_extractor.py`
+
+Ce script permet de :
+- Tester l'extraction complète d'un PDF
+- Afficher un aperçu du contenu extrait
+- Sauvegarder optionnellement les données extraites dans Supabase
+- Gérer l'association avec les cours existants
+
+## Structure de stockage implémentée
+
+### Stockage local
+Le système organise les images extraites dans une structure hiérarchique :
+```
+data/
+└── images/
+    └── [nom_du_cours]/
+        ├── page_1.png
+        ├── page_2.png
+        └── ...
+```
+
+Alternativement, si un ID de cours est fourni :
+```
+data/
+└── images/
+    └── course_[id]/
+        ├── page_1.png
+        ├── page_2.png
+        └── ...
+```
+
+### Stockage dans Supabase
+Le système utilise deux tables principales dans Supabase :
+
+1. **Table `courses`** (déjà existante) :
+   - id (PK)
+   - name (text)
+   - pdf_url (text)
+   - photo_url (text)
+   - year (text)
+   - created_at (timestamp)
+
+2. **Table `pages`** :
+   - id (PK)
+   - course_id (FK vers courses.id)
+   - page_number (integer)
+   - image_path (text) - chemin vers l'image extraite
+   - content_text (text) - texte extrait de la page
+   - created_at (timestamp)
+
+## Configuration de sécurité
+Nous avons configuré les politiques de Row-Level Security (RLS) dans Supabase pour permettre :
+- La lecture publique des cours ("Public can view courses")
+- L'insertion de données via l'API ("Allow API inserts")
+
+Ces politiques permettent à notre application d'interagir avec la base de données sans nécessiter d'authentification, ce qui est approprié pour l'environnement de développement actuel.
+
+## Tests et validation
+Nous avons testé le système avec un cours d'exemple "amphi-Cours1-Conducteursetcomposants.pdf" comprenant 53 pages :
+- Extraction réussie du texte de chaque page
+- Génération d'images de haute qualité pour chaque page
+- Stockage des images dans le système de fichiers local
+- Enregistrement des métadonnées dans Supabase avec des IDs séquentiels (1 à 53)
+
+## Défis rencontrés et solutions
+
+### Problème de sécurité RLS
+Nous avons rencontré une erreur de sécurité au niveau des lignes (Row-Level Security) dans Supabase lors de l'insertion de données :
+```
+ERROR: new row violates row-level security policy for table "courses"
+```
+
+**Solution** : Modification des politiques RLS pour permettre les insertions sans authentification :
+1. Création d'une nouvelle politique "Allow API inserts" pour la table "courses"
+2. Configuration de la politique pour autoriser toutes les insertions avec une condition `true`
+
+## Améliorations futures à considérer
+Pour les prochaines phases ou une mise en production, nous recommandons :
+
+1. **Sécurité** : Restreindre les politiques RLS aux utilisateurs authentifiés une fois le système d'authentification en place
+2. **Performance** : Optimiser davantage le traitement des images pour réduire leur taille tout en maintenant une qualité suffisante pour les embeddings
+3. **Robustesse** : Améliorer la gestion des erreurs et ajouter des mécanismes de reprise en cas d'échec de traitement
+4. **Scalabilité** : Implémenter un traitement par lots pour gérer efficacement les cours volumineux
+5. **Méta-extraction** : Ajouter des capacités pour extraire automatiquement les métadonnées des cours (titre, auteur, date, etc.)
+
+## Conclusion
+Le Sprint 2 a été complété avec succès. Nous avons développé un système robuste pour extraire et préparer le contenu des cours PDF, le convertir en images de haute qualité et stocker toutes les informations nécessaires pour les étapes suivantes du projet. Ce système constitue la base essentielle sur laquelle reposera la génération d'embeddings multimodaux dans le Sprint 3.
+
+## Réalisations du sprint
+Toutes les tâches prévues ont été accomplies :
+1. ✅ Développer un extracteur de contenu PDF
+2. ✅ Convertir les pages PDF en images pour le traitement multimodal
+3. ✅ Mettre en place un système de stockage des images extraites
+4. ✅ Tester l'extraction avec un cours d'exemple

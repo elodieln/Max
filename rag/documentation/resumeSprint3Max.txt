@@ -1,0 +1,163 @@
+# Résumé du Sprint 3 - Génération et stockage des embeddings
+
+## Objectif du sprint
+Ce sprint avait pour objectif d'implémenter le système d'embeddings multimodal pour le RAG "Max", un assistant IA conçu pour aider les élèves en école d'ingénieur en électronique. Nous devions intégrer l'API RAG Multimodal pour générer des embeddings d'images, développer le système de requêtes textuelles, créer le système de stockage des embeddings dans Supabase, et tester la génération et le stockage des embeddings.
+
+## Composants développés
+
+### 1. Client d'embeddings multimodal
+Nous avons créé un client pour interagir avec l'API RAG Multimodal, capable de générer des embeddings à partir de textes et d'images.
+
+**Fichier principal** : `src/embeddings/multimodal_embeddings.py`
+
+La classe `MultimodalEmbeddingsClient` implémente les fonctionnalités suivantes :
+- Initialisation avec configuration de l'URL de l'API
+- Génération d'embeddings pour des requêtes textuelles via `encode_queries()`
+- Génération d'embeddings pour des images via `encode_documents()`
+- Calcul de similarité entre embeddings via `compute_similarity()`
+
+Points importants dans l'implémentation :
+- Correction du format d'envoi des requêtes pour qu'il soit compatible avec l'API
+- Gestion des fichiers images avec ouverture et fermeture propres
+- Gestion des erreurs et logging détaillé
+
+### 2. Stockage des embeddings
+Nous avons développé un système pour stocker et récupérer les embeddings dans la base de données Supabase.
+
+**Fichier principal** : `src/embeddings/embedding_storage.py`
+
+La classe `EmbeddingStorage` implémente les fonctionnalités suivantes :
+- Stockage des embeddings dans Supabase via `store_page_embedding()`
+- Récupération des embeddings depuis Supabase via `get_page_embedding()`
+- Recherche de pages similaires via `find_similar_pages()`
+
+Points importants dans l'implémentation :
+- Utilisation du type `vector` dans Supabase pour stocker les embeddings
+- Création d'une fonction RPC dans Supabase pour calculer la similarité entre embeddings
+- Gestion des erreurs et logging détaillé
+
+### 3. Générateur d'embeddings
+Nous avons créé un composant pour orchestrer la génération et le stockage des embeddings.
+
+**Fichier principal** : `src/embeddings/embedding_generator.py`
+
+La classe `EmbeddingGenerator` implémente les fonctionnalités suivantes :
+- Génération et stockage d'embeddings pour des pages via `generate_and_store_embeddings()`
+- Génération d'embeddings pour des requêtes textuelles via `generate_query_embedding()`
+- Optimisation d'images avant génération d'embeddings (via les utilitaires d'image)
+- Traitement par lots pour gérer efficacement les collections de pages
+
+## Structure de données et intégration avec Supabase
+
+### Structure de la table `page_embeddings`
+Nous avons configuré une table vectorielle dans Supabase pour stocker les embeddings :
+```sql
+CREATE TABLE page_embeddings (
+    id BIGSERIAL PRIMARY KEY,
+    page_id BIGINT REFERENCES pages(id),
+    embedding vector(1536),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
+
+### Fonction RPC pour la recherche par similarité
+Nous avons créé une fonction RPC dans Supabase pour calculer la similarité entre embeddings :
+```sql
+CREATE OR REPLACE FUNCTION match_page_embeddings(
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int
+)
+RETURNS TABLE (
+  id bigint,
+  page_id bigint,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    pe.id,
+    pe.page_id,
+    1 - (pe.embedding <=> query_embedding) as similarity
+  FROM
+    page_embeddings pe
+  WHERE
+    1 - (pe.embedding <=> query_embedding) > match_threshold
+  ORDER BY
+    similarity DESC
+  LIMIT
+    match_count;
+END;
+$$;
+```
+
+Cette fonction utilise l'opérateur `<=>` de l'extension pgvector pour calculer la distance cosinus entre les embeddings, et renvoie les résultats triés par similarité décroissante.
+
+## Défis rencontrés et solutions
+
+### 1. Format des requêtes API
+**Problème** : L'API attendait un format spécifique pour les requêtes, différent de ce que nous avions initialement implémenté.
+
+**Solution** : Ajustement du format d'envoi des requêtes après des tests ciblés :
+- Pour les requêtes textuelles, l'API attendait directement une liste de chaînes, sans clé supplémentaire
+- Correction de l'implémentation dans `encode_queries()` pour envoyer la liste directement
+
+### 2. Gestion des fichiers
+**Problème** : Gestion incorrecte des fichiers lors de l'envoi à l'API, entraînant des erreurs de déballage de tuples.
+
+**Solution** : Restructuration de la méthode `encode_documents()` pour :
+- Maintenir une référence à tous les fichiers ouverts
+- S'assurer que les fichiers sont correctement fermés, même en cas d'erreur
+- Construire correctement les tuples pour la requête multipart
+
+### 3. Compatibilité des types dans Supabase
+**Problème** : Incompatibilité entre les tableaux de nombres à virgule flottante et le type vectoriel dans Supabase, causant une erreur lors de l'utilisation de l'opérateur `<=>`.
+
+**Solution** : 
+- Installation de l'extension pgvector dans Supabase
+- Reconception de la table `page_embeddings` pour utiliser le type `vector(1536)` au lieu d'un tableau
+- Création d'une fonction RPC dans Supabase pour calculer la similarité correctement
+
+## Tests et validation
+
+### Test d'embeddings de requêtes
+Nous avons testé la génération d'embeddings pour des requêtes textuelles comme "Qu'est-ce qu'un condensateur ?". Le système a généré avec succès un embedding de dimension 1536.
+
+### Test d'embeddings d'images
+Nous avons testé la génération d'embeddings pour des images extraites de PDF. Le système a converti les pages en images, optimisé ces images, puis généré avec succès des embeddings de dimension 1536.
+
+### Test du processus complet
+Nous avons testé le processus complet de traitement d'un PDF, d'extraction des pages, de génération d'embeddings et de recherche de similarité :
+1. Extraction de 53 pages du PDF "amphi-Cours1-Conducteursetcomposants.pdf"
+2. Sauvegarde des métadonnées des pages dans Supabase
+3. Génération d'embeddings pour 2 pages de test
+4. Stockage des embeddings dans Supabase
+5. Génération d'un embedding pour la requête "Qu'est-ce qu'un condensateur ?"
+6. Recherche des pages similaires via la fonction RPC
+7. Identification d'une page pertinente (ID 162) avec un score de similarité de 0.5697
+
+## Optimisations implémentées
+
+### Traitement d'images
+Nous avons optimisé le traitement des images avant la génération d'embeddings :
+- Redimensionnement des images pour réduire la taille tout en préservant le ratio d'aspect
+- Conversion en format RGB si nécessaire
+- Optimisation de la qualité pour réduire la taille des fichiers
+
+### Traitement par lots
+Nous avons implémenté un traitement par lots pour la génération d'embeddings :
+- Limitation à 10 images par lot pour éviter de surcharger l'API
+- Logging détaillé de la progression pour chaque lot
+- Gestion individuelle des succès/échecs pour maximiser la résilience
+
+## Conclusion
+
+Le Sprint 3 a été complété avec succès en accomplissant toutes les tâches prévues :
+1. ✅ Intégration de l'API RAG Multimodal pour générer des embeddings d'images
+2. ✅ Développement du système de requêtes textuelles
+3. ✅ Création du système de stockage des embeddings dans Supabase
+4. ✅ Test de la génération et du stockage des embeddings
+
+Le système est maintenant capable de générer des embeddings pour du contenu textuel et visuel, de les stocker efficacement dans une base de données vectorielle, et de rechercher des contenus similaires sémantiquement. Cette étape constitue le cœur technique du RAG multimodal et pose les fondations solides pour les sprints suivants, notamment le développement du moteur de recherche et récupération, ainsi que la génération de réponses éducatives.
