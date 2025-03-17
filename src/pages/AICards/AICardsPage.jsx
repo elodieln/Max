@@ -13,7 +13,7 @@ const Chatbot = () => {
     try{
       console.log('question =', question);
       const response = await axios.post(
-        'http://localhost:5000/generate-pdf',
+        'http://localhost:5001/generate-pdf',
         {question},
         {responseType: 'blob'}
       );
