@@ -6,6 +6,8 @@ import CoursesPage from './pages/Courses/CoursesPage';
 // Modifier le chemin d'importation pour correspondre à votre structure
 import CoursesFavoritesPage from './pages/Favorites/CoursesFavorites/CoursesFavoritesPage';
 import AICardsPage from './pages/AICards/AICardsPage';
+import ChatbotPage from './pages/Chatbot/ChatbotPage';
+
 
 
 function App() {
@@ -17,7 +19,7 @@ function App() {
           <Route path="/" element={<CoursesPage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/create-card" element={<AICardsPage />} />
-          <Route path="/chatbot" element={<div>Chatbot</div>} />
+          <Route path="/chatbot" element={<ChatbotPage />} />
           {/* Remplacer le div par le composant */}
           <Route path="/favorites/courses" element={<CoursesFavoritesPage />} />
           <Route path="/favorites/cards" element={<div>Fiches</div>} />

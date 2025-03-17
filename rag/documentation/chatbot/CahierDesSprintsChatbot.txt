@@ -1,0 +1,25 @@
+Plan des sprints
+
+Sprint 1: Mise en place de la structure de base
+
+Création de la structure du composant ChatbotPage
+Implémentation du design de base respectant les couleurs du site
+Mise en place du champ de saisie et de la zone d'affichage des messages
+
+Sprint 2: Connexion à l'API et fonctionnalités de base
+
+Intégration avec l'API RAG Multimodal
+Implémentation de l'envoi et réception des messages
+Ajout de l'indicateur de chargement
+
+Sprint 3: Améliorations UX
+
+Ajout du formatage Markdown pour les réponses
+Effet de frappe pour l'affichage progressif des réponses
+Sauvegarde de l'historique des conversations
+
+Sprint 4: Optimisations et finitions
+
+Polissage de l'interface
+Tests et correction des bugs
+Optimisations de performance

@@ -1,0 +1,70 @@
+# Rapport sur le Sprint 1 : Mise en place de la structure de base du chatbot Max
+
+## Résumé du Sprint
+
+Au cours de ce Sprint 1, nous avons réussi à mettre en place la structure de base du chatbot Max pour l'application d'assistance aux étudiants en école d'ingénieur en électronique. Conformément au cahier des sprints, nous avons créé la structure du composant, implémenté le design de base respectant les couleurs du site, et mis en place le champ de saisie et la zone d'affichage des messages.
+
+## Travail effectué
+
+### 1. Création de la structure du composant ChatbotPage
+
+Nous avons créé deux fichiers principaux :
+- `src/pages/Chatbot/ChatbotPage.jsx` : Contient la logique et la structure du composant React
+- `src/pages/Chatbot/ChatbotPage.css` : Contient les styles spécifiques à la page du chatbot
+
+Dans le composant React, nous avons implémenté :
+- Un état `messages` pour stocker l'historique des conversations, initialisé avec un message de bienvenue de Max
+- Un état `inputMessage` pour gérer le message en cours de saisie par l'utilisateur
+- Une fonction `handleSendMessage` pour traiter l'envoi des messages (sans l'intégration à l'API pour l'instant)
+
+### 2. Implémentation du design de base
+
+Nous avons développé une interface utilisateur qui respecte l'identité visuelle du site, avec :
+- Une utilisation de la couleur principale `#007179` pour maintenir la cohérence avec le reste du site
+- Une mise en page responsive qui s'adapte aux différentes tailles d'écran
+- Un contraste visuel clair entre les messages de l'utilisateur et ceux du chatbot
+- Un design épuré avec des coins arrondis et des ombres légères pour donner du relief
+
+Les éléments de style principaux comprennent :
+- Un conteneur principal avec un fond blanc et des bords arrondis
+- Une zone de messages scrollable avec un affichage distinct entre les messages de l'utilisateur et du bot
+- Un formulaire de saisie avec un champ de texte et un bouton d'envoi
+
+### 3. Mise en place du champ de saisie et de la zone d'affichage des messages
+
+L'interface utilisateur comprend :
+- Une zone d'affichage des messages qui montre l'historique de la conversation
+- Les messages de l'utilisateur alignés à droite avec un fond de couleur `#007179` (turquoise foncé) et texte blanc
+- Les messages du bot alignés à gauche avec un fond gris clair et texte foncé
+- Un formulaire de saisie en bas de l'écran avec :
+  - Un champ de texte pour entrer la question
+  - Un bouton "Envoyer" de couleur `#007179`
+
+### 4. Intégration dans l'application principale
+
+Nous avons mis à jour le fichier `App.jsx` pour remplacer le div temporaire par notre nouveau composant :
+- Ajout de l'import du composant ChatbotPage
+- Modification de la route `/chatbot` pour utiliser ce composant
+
+## Résultat
+
+Le résultat est une interface de chatbot fonctionnelle d'un point de vue UI/UX, qui permet à l'utilisateur de :
+- Voir le message d'accueil du chatbot
+- Saisir un message dans le champ de texte
+- Envoyer le message via le bouton ou en appuyant sur Entrée
+- Voir les messages s'afficher dans la zone de conversation
+
+L'interface est responsive et s'adapte aux différentes tailles d'écran grâce aux media queries définies dans le CSS.
+
+## Prochaines étapes (Sprint 2)
+
+Pour le prochain sprint, nous devrons :
+- Intégrer l'API RAG Multimodal pour permettre au chatbot de générer des réponses pertinentes
+- Implémenter l'envoi et la réception des messages via cette API
+- Ajouter un indicateur de chargement pendant le traitement des requêtes
+
+
+
+## Conclusion
+
+Le Sprint 1 a été complété avec succès, établissant une base solide pour le développement futur du chatbot. L'interface utilisateur est maintenant en place et prête à être connectée à l'API RAG Multimodal dans le prochain sprint.
