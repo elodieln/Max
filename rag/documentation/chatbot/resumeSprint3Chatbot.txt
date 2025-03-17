@@ -1,0 +1,176 @@
+# Rapport sur le Sprint 3 : Améliorations UX du chatbot Max
+
+## Résumé du Sprint
+
+Au cours du Sprint 3, nous avons ajouté plusieurs améliorations significatives à l'interface utilisateur du chatbot Max pour enrichir l'expérience utilisateur et faciliter la gestion des conversations. Conformément au cahier des sprints, nous avons implémenté le formatage Markdown pour les réponses, ajouté un effet de frappe pour l'affichage progressif des réponses, et mis en place un système complet de sauvegarde et gestion de l'historique des conversations.
+
+## Travail effectué
+
+### 1. Ajout du formatage Markdown pour les réponses
+
+Nous avons intégré la bibliothèque `react-markdown` pour permettre un formatage riche des réponses du chatbot :
+
+- Installation de la bibliothèque : `npm install react-markdown`
+- Mise en place du composant `ReactMarkdown` pour afficher les réponses formatées
+- Création de styles CSS spécifiques pour améliorer l'apparence des éléments Markdown (titres, listes, code, tableaux, etc.)
+- Configuration pour garantir que le contenu Markdown soit bien rendu tout en préservant la cohérence visuelle avec le reste de l'interface
+
+Cette fonctionnalité permet au chatbot de fournir des réponses plus structurées et lisibles, notamment pour les explications techniques qui nécessitent une hiérarchisation de l'information.
+
+### 2. Effet de frappe pour l'affichage progressif des réponses
+
+Pour rendre les interactions avec le chatbot plus naturelles, nous avons implémenté un effet de frappe simulant la rédaction progressive des réponses :
+
+- Installation de la bibliothèque `react-type-animation` : `npm install react-type-animation`
+- Mise en place d'un état pour contrôler l'animation de frappe (`isTyping` et `currentTypingText`)
+- Configuration de la vitesse de frappe adaptative en fonction de la longueur du texte
+- Ajout d'un message "Je réfléchis à votre question..." pendant le temps de chargement de la réponse
+- Optimisation de l'expérience utilisateur en ajustant la durée d'affichage en fonction de la complexité de la réponse
+
+Cette amélioration donne l'impression que le chatbot est en train de "réfléchir" et de "taper" sa réponse, rendant l'interaction plus humaine et engageante.
+
+### 3. Sauvegarde de l'historique des conversations
+
+Pour permettre aux utilisateurs de retrouver leurs échanges précédents, nous avons implémenté un système complet de gestion des conversations :
+
+#### 3.1 Création de la structure de base de données
+
+Nous avons créé une nouvelle table dans Supabase pour stocker l'historique des conversations :
+
+```sql
+create table public.chat_history (
+  id serial not null,
+  user_email text not null,
+  message_text text not null,
+  sender text not null,
+  timestamp timestamp with time zone not null default timezone('utc'::text, now()),
+  metadata jsonb null,
+  conversation_id uuid not null,
+  constraint chat_history_pkey primary key (id),
+  constraint chat_history_user_email_fkey foreign key (user_email) references users (email) on delete cascade,
+  constraint chat_history_sender_check check (
+    sender = any (array['user'::text, 'bot'::text])
+  )
+);
+
+create index idx_chat_history_conversation_id on public.chat_history(conversation_id);
+create index idx_chat_history_user_email on public.chat_history(user_email);
+```
+
+#### 3.2 Création d'un service pour la gestion des conversations
+
+Nous avons développé un service complet dans `src/services/chat/history.js` pour gérer les opérations liées à l'historique :
+
+- `createConversation` : génère un nouvel identifiant unique pour une conversation
+- `saveMessage` : sauvegarde un message dans la base de données
+- `loadConversationHistory` : charge l'historique d'une conversation spécifique
+- `getUserConversations` : récupère la liste des conversations d'un utilisateur
+- `deleteConversation` : supprime une conversation de l'historique
+
+Pour implémenter ces fonctionnalités, nous avons installé la bibliothèque UUID :
+```bash
+npm install uuid
+```
+
+#### 3.3 Développement du composant d'historique des conversations
+
+Nous avons créé un nouveau composant `ChatHistory` pour afficher et gérer les conversations :
+
+- Interface utilisateur pour afficher la liste des conversations
+- Fonctionnalité de recherche pour filtrer les conversations
+- Option de suppression de conversation avec confirmation
+- Bouton pour créer une nouvelle conversation
+- Affichage intelligent des dates (aujourd'hui, hier, date complète)
+- Styles CSS pour une expérience utilisateur fluide et agréable
+
+#### 3.4 Amélioration de l'UX des conversations
+
+Suite aux retours d'utilisation, nous avons apporté plusieurs améliorations :
+
+- Correction du problème de défilement automatique en modifiant le comportement de `scrollIntoView`
+- Ajout d'un indicateur de réflexion pendant le chargement des réponses
+- Optimisation de la vitesse d'affichage pour les réponses longues
+- Design responsive adapté pour les appareils mobiles et les écrans de bureau
+- Amélioration visuelle avec l'ajout d'icônes et d'animations fluides grâce à `react-icons`
+
+```bash
+npm install react-icons
+```
+
+### 4. Optimisations générales
+
+Pour améliorer l'expérience globale, nous avons également apporté plusieurs optimisations :
+
+- Ajustement des délais d'affichage pour une expérience plus fluide
+- Amélioration des styles CSS pour une meilleure cohérence visuelle
+- Gestion avancée des états de chargement pour informer l'utilisateur
+- Optimisation des appels à l'API et de la gestion des erreurs
+- Mise en place d'animations subtiles pour les transitions entre les états
+
+## Difficultés rencontrées et solutions
+
+### 1. Problème de défilement automatique
+
+**Problème** : Lorsque de nouveaux messages étaient ajoutés, la page défilait parfois de façon inappropriée.
+
+**Solution** : Nous avons modifié le comportement de défilement en utilisant un délai court et l'option `block: 'nearest'` pour le `scrollIntoView`, ce qui a permis d'obtenir un défilement plus naturel et contrôlé.
+
+### 2. Temps de chargement perçu
+
+**Problème** : Le temps de réponse de l'API pouvait parfois sembler long aux utilisateurs.
+
+**Solution** : Nous avons implémenté un message de réflexion immédiat et une animation de frappe dont la vitesse s'adapte à la longueur du contenu, donnant l'impression d'une interaction continue et réduisant l'impression d'attente.
+
+### 3. Gestion des erreurs lors de la sauvegarde
+
+**Problème** : Des erreurs pouvaient survenir lors de la sauvegarde des messages dans Supabase.
+
+**Solution** : Nous avons mis en place une gestion robuste des erreurs avec des blocs try/catch et des messages d'erreur explicites, tout en maintenant l'expérience utilisateur même en cas d'échec de sauvegarde.
+
+## Technologies utilisées
+
+- **React** : Framework principal pour le développement frontend
+- **Supabase** : Backend as a Service pour la gestion des données
+- **react-markdown** : Pour le formatage du texte en Markdown
+- **react-type-animation** : Pour l'effet de frappe
+- **uuid** : Pour la génération d'identifiants uniques
+- **react-icons** : Pour l'ajout d'icônes dans l'interface
+
+## Code créé et modifié
+
+### Nouveaux fichiers
+- `src/components/ChatHistory.jsx` : Composant pour afficher l'historique des conversations
+- `src/components/ChatHistory.css` : Styles pour le composant d'historique
+- `src/services/chat/history.js` : Service pour la gestion de l'historique
+
+### Fichiers modifiés
+- `src/pages/Chatbot/ChatbotPage.jsx` : Intégration du formatage Markdown, de l'effet de frappe et de l'historique
+- `src/pages/Chatbot/ChatbotPage.css` : Ajout de styles pour les nouvelles fonctionnalités
+
+## Résultat final
+
+À l'issue de ce sprint, le chatbot Max dispose désormais :
+
+1. D'une interface plus conviviale avec un formatage riche des réponses grâce au Markdown
+2. D'une interaction plus naturelle et engageante avec l'effet de frappe
+3. D'un système complet de gestion des conversations permettant aux utilisateurs de :
+   - Retrouver leurs conversations précédentes
+   - Rechercher dans leurs conversations
+   - Supprimer les conversations non désirées
+   - Créer facilement de nouvelles conversations
+
+Ces améliorations transforment Max d'un simple outil de questions-réponses en un assistant interactif complet, offrant une expérience utilisateur proche d'une conversation naturelle avec un expert en électronique.
+
+## Prochaines étapes (Sprint 4)
+
+Pour le prochain sprint, nous nous concentrerons sur :
+
+1. Polissage de l'interface
+2. Tests et correction des bugs
+3. Optimisations de performance
+
+## Conclusion
+
+Le Sprint 3 a été complété avec succès, enrichissant considérablement l'expérience utilisateur du chatbot Max. Les améliorations UX mises en œuvre rendent les interactions plus naturelles, engageantes et utiles, tout en permettant aux utilisateurs de gérer efficacement leur historique de conversations.
+
+Ce sprint constitue une étape essentielle dans la transformation de Max en un assistant IA complet et professionnel pour les étudiants en école d'ingénieur en électronique.
