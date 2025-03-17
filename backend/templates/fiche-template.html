@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{cours.Titre_du_cours}}</title>
+    <style>
+        /* Styles généraux */
+        body {
+            font-family: 'Helvetica', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Définir la taille et les marges des pages */
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        /* Page de couverture */
+        .cover-page {
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 50px;
+            position: relative;
+        }
+
+        .logo {
+            color: #007179;
+            font-size: 3em;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 3em;
+        }
+
+        .separator {
+            width: 60%;
+            height: 2px;
+            background-color: #FF6F00;
+            margin: 2em 0;
+        }
+
+        .title {
+            color: #007179;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 1em;
+        }
+
+        .fiche-subtitle {
+            color: #FF6F00;
+            font-size: 1.5em;
+        }
+
+        /* Pages de contenu */
+        .content-page,
+        .qcm-page {
+            padding: 1em 0;
+            page-break-before: always;
+            position: relative;
+            min-height: 95vh;
+        }
+
+        .section-title {
+            color: #007179;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-bottom: 2px solid #007179;
+            margin-top: 1.5em;
+            padding-bottom: 0.3em;
+        }
+
+        /* Style pour les concepts clés */
+        .concept-boxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            margin-top: 1em;
+        }
+
+        .concept-box {
+            background-color: #e6f7f8;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            color: #007179;
+        }
+
+        /* Style pour les définitions */
+        .definition-list {
+            margin-top: 1em;
+        }
+
+        .definition-item {
+            padding: 0.8em;
+            margin-bottom: 0.5em;
+            display: flex;
+        }
+
+        .definition-item:nth-child(odd) {
+            background-color: #e6f7f8;
+            border-radius: 4px;
+        }
+
+        .bullet {
+            color: #FF6F00;
+            margin-right: 0.5em;
+            font-size: 1.2em;
+        }
+
+        /* Style pour l'exemple */
+        .example-box {
+            background-color: #f9f9f9;
+            border: 1px solid #007179;
+            border-radius: 5px;
+            padding: 1em;
+            margin-top: 1em;
+        }
+
+        .example-title {
+            color: #FF6F00;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+
+        /* Style pour le QCM */
+        .qcm-header {
+            background-color: #007179;
+            color: white;
+            padding: 1em;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 1.5em;
+        }
+
+        .question-box {
+            margin-bottom: 2em;
+        }
+
+        .question-title {
+            background-color: #007179;
+            color: white;
+            padding: 0.5em;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .question-text {
+            margin: 0.8em 0 1em 0;
+        }
+
+        .options {
+            margin-bottom: 1em;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.7em;
+        }
+
+        .option-circle {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #007179;
+            border-radius: 50%;
+            margin-right: 0.8em;
+            display: inline-block;
+            position: relative;
+        }
+
+        .option-circle.correct::after {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background-color: #FF6F00;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .explanation-box {
+            background-color: #e6f7f8;
+            padding: 1em;
+            border-radius: 5px;
+            margin-top: 1em;
+        }
+
+        .explanation-title {
+            color: #007179;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+
+        /* En-têtes et pieds de page */
+        .header {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            font-size: 8pt;
+            color: #007179;
+        }
+
+        .header-line {
+            position: fixed;
+            top: 25px;
+            left: 20px;
+            right: 20px;
+            height: 1px;
+            background-color: #007179;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+        }
+
+        .footer-line {
+            position: fixed;
+            bottom: 25px;
+            left: 20px;
+            right: 20px;
+            height: 1px;
+            background-color: #007179;
+        }
+
+        /* Pour éviter les sauts de page à l'intérieur des sections */
+        .section {
+            page-break-inside: avoid;
+        }
+
+        /* Date de génération */
+        .generation-date {
+            margin-top: auto;
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        /* Contenu principal */
+        .main-content {
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+
+        /* Style pour cacher les en-têtes et pieds de page sur la couverture */
+        .cover-page .header,
+        .cover-page .header-line,
+        .cover-page .footer,
+        .cover-page .footer-line {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- En-tête pour toutes les pages (sauf couverture) -->
+    <div class="header">MAX - Assistant électronique pour les étudiants</div>
+    <div class="header-line"></div>
+
+    <!-- Pied de page pour toutes les pages (sauf couverture) -->
+    <div class="footer">Page</div>
+    <div class="footer-line"></div>
+
+    <!-- Page de couverture -->
+    <div class="cover-page">
+        <div class="logo">MAX</div>
+        <div class="subtitle">Assistant électronique pour les étudiants</div>
+
+        <div class="separator"></div>
+
+        <div class="title">{{cours.Titre_du_cours}}</div>
+        <div class="fiche-subtitle">Fiche de synthèse</div>
+
+        <div class="generation-date">
+            Généré le {{dateGeneration}}
+        </div>
+    </div>
+
+    <!-- Page de contenu -->
+    <div class="content-page">
+        <div class="main-content">
+            <div class="title" style="text-align: center; font-size: 1.5em;">
+                {{cours.Titre_du_cours}}
+            </div>
+
+            <!-- Description -->
+            <div class="section">
+                <div class="section-title">Description</div>
+                <p>{{cours.Description_du_cours}}</p>
+            </div>
+
+            <!-- Concepts clés -->
+            <div class="section">
+                <div class="section-title">Concepts clés</div>
+                <div class="concept-boxes">
+                    {{#each cours.Concepts_cles}}
+                    <div class="concept-box">{{this}}</div>
+                    {{/each}}
+                </div>
+            </div>
+
+            <!-- Définitions et formules -->
+            <div class="section">
+                <div class="section-title">Définitions et formules</div>
+                <div class="definition-list">
+                    {{#each cours.Definitions_et_Formules}}
+                    <div class="definition-item">
+                        <span class="bullet">•</span>
+                        <span>{{this}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+
+            <!-- Exemple concret -->
+            <div class="section">
+                <div class="section-title">Exemple concret</div>
+                <div class="example-box">
+                    <div class="example-title">Application pratique</div>
+                    <p>{{cours.Exemple_concret}}</p>
+                </div>
+            </div>
+
+            <!-- Points clés -->
+            <div class="section">
+                <div class="section-title">Points clés</div>
+                <div class="definition-list">
+                    {{#each cours.Points_cles}}
+                    <div class="definition-item">
+                        <span class="bullet">•</span>
+                        <span>{{this}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page QCM -->
+    <div class="qcm-page">
+        <div class="main-content">
+            <div class="qcm-header">QCM : Testez vos connaissances</div>
+
+            {{#each qcm.questions}}
+            <div class="question-box">
+                <div class="question-title">Question {{numero}}</div>
+                <div class="question-text">{{question}}</div>
+
+                <div class="options">
+                    {{#each choix}}
+                    <div class="option">
+                        <div class="option-circle {{#if (eq @index ../bonne_reponse)}}correct{{/if}}"></div>
+                        <div>{{this}}</div>
+                    </div>
+                    {{/each}}
+                </div>
+
+                <div class="explanation-box">
+                    <div class="explanation-title">Explication:</div>
+                    <p>{{explication}}</p>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+</body>
+
+</html>
