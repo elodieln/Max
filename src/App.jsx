@@ -5,7 +5,7 @@ import Footer from './components/layout/Footer/Footer';
 import CoursesPage from './pages/Courses/CoursesPage';
 // Modifier le chemin d'importation pour correspondre à votre structure
 import CoursesFavoritesPage from './pages/Favorites/CoursesFavorites/CoursesFavoritesPage';
-import AICardsPage from './pages/AICards/AICardsPage';
+import AICardsPage from './pages/AICards/AICardsPageNew';
 import ChatbotPage from './pages/Chatbot/ChatbotPage';
 
 

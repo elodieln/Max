@@ -1,0 +1,203 @@
+/* src/components/CardViewer/CardViewer.css */
+.card-viewer {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.card-viewer-header {
+    background-color: #007179;
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-viewer-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.card-viewer-header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.card-viewer-header-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.card-viewer-header-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.card-viewer-body {
+    padding: 2rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.card-viewer-section {
+    margin-bottom: 2rem;
+}
+
+.card-viewer-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #007179;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #007179;
+}
+
+.card-viewer-description {
+    color: #334155;
+    line-height: 1.6;
+}
+
+.card-viewer-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.card-viewer-list-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-viewer-list-item:last-child {
+    border-bottom: none;
+}
+
+.card-viewer-list-item-bullet {
+    color: #007179;
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    line-height: 1;
+}
+
+.card-viewer-example {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.card-viewer-example-title {
+    font-weight: 600;
+    color: #007179;
+    margin-bottom: 0.5rem;
+}
+
+.card-viewer-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.card-viewer-qcm {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e2e8f0;
+}
+
+.card-viewer-qcm-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #007179;
+    margin-bottom: 1.5rem;
+}
+
+.card-viewer-question {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+}
+
+.card-viewer-question-title {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 1rem;
+}
+
+.card-viewer-choices {
+    margin-bottom: 1rem;
+}
+
+.card-viewer-choice {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.card-viewer-choice-bullet {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #007179;
+    margin-right: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-viewer-choice-bullet.correct {
+    background-color: #007179;
+    position: relative;
+}
+
+.card-viewer-choice-bullet.correct::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.card-viewer-explanation {
+    background-color: #e6f7f8;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.card-viewer-explanation-title {
+    font-weight: 600;
+    color: #007179;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 640px) {
+    .card-viewer-header {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .card-viewer-body {
+        padding: 1.5rem;
+    }
+}
