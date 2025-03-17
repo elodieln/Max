@@ -168,7 +168,7 @@ class GeminiClient:
             # Construire le prompt pour Gemini
             prompt = f"""
             En tant qu'assistant spécialisé en électronique, réponds à la question suivante en te basant
-            uniquement sur les informations fournies. Si la réponse n'est pas contenue dans les informations
+            sur les informations fournies. Si la réponse n'est pas contenue dans les informations
             fournies, indique-le clairement.
             
             Question: {query}
@@ -212,47 +212,48 @@ class GeminiClient:
     
     async def rewrite_query(self, original_query: str) -> str:
         """
-        Réécrit une requête pour améliorer la recherche vectorielle
+        Réécrit une requête pour optimiser la recherche vectorielle dans un contexte d'électronique,
+        en insistant sur les aspects techniques liés au dopage des semi-conducteurs et à la formation d'une jonction PN.
         
         Args:
             original_query: Requête originale de l'utilisateur
             
         Returns:
-            Requête réécrite
+            Requête reformulée, mettant l'accent sur le dopage (type N et P), les porteurs de charge et la jonction PN.
         """
         # Vérifier si l'authentification OpenRouter est disponible
         if not self.client or not self.api_key:
             return original_query
-                
+
         try:
             prompt = f"""
-            Reformule la requête suivante pour optimiser la recherche dans un contexte d'électronique:
+            Reformule la requête suivante pour optimiser la recherche dans un contexte d'électronique, 
+            en mettant l'accent sur les mécanismes de dopage dans les semi-conducteurs.
+            En particulier, insiste sur la différence entre le dopage de type N (avec des atomes donneurs, par exemple le phosphore)
+            et le dopage de type P (avec des atomes accepteurs, par exemple le bore), et sur l'impact de ces dopages sur la formation d'une jonction PN.
+            Assure-toi d'inclure les termes techniques tels que 'porteurs de charge', 'niveau de Fermi', 'zone de déplétion' et 'jonction PN'.
             
+            Voici la requête originale:
             "{original_query}"
             
-            Ne réponds qu'avec la requête reformulée, rien d'autre. Conserve les termes techniques importants.
-            Développe les acronymes. Inclus les concepts connexes qui pourraient être pertinents.
+            Réponds uniquement avec la requête reformulée.
             """
-            
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=100
             )
-            
             rewritten_query = response.choices[0].message.content.strip().strip('"')
-            
             return rewritten_query
-        
+
         except Exception as e:
             # Ne pas rapporter l'erreur si elle a déjà été signalée
             if not hasattr(GeminiClient, "_rewrite_error_reported"):
                 GeminiClient._rewrite_error_reported = True
                 logger.error(f"Error rewriting query: {str(e)}")
-            
             return original_query
+
+
     
     def _extract_components(self, text: str) -> List[str]:
         """Extrait les composants électroniques mentionnés dans le texte"""

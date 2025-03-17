@@ -15,8 +15,8 @@ class PDFProcessor:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
         self.reader = PdfReader(pdf_path)
-        self.chunk_size = 500  # Taille cible pour les chunks de texte
-        self.overlap = 100     # Chevauchement entre les chunks
+        self.chunk_size = 300  # Taille cible pour les chunks de texte
+        self.overlap = 150     # Chevauchement entre les chunks
         
     def extract_content(self) -> List[Dict[str, Any]]:
         """

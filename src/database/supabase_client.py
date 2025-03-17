@@ -110,7 +110,7 @@ class SupabaseManager:
                         'chunk_type': 'text',
                         'page_number': chunk['page_number'],
                         'embedding': embedding,
-                        'metadata': json.dumps(chunk['metadata']),
+                        'metadata': metadata_utf8,
                         'is_multimodal': False
                     }
                     
@@ -141,7 +141,7 @@ class SupabaseManager:
                         'chunk_type': 'image',
                         'page_number': chunk['page_number'],
                         'embedding': embedding,
-                        'metadata': json.dumps(chunk['metadata']),
+                        'metadata': json.dumps(chunk['metadata'], ensure_ascii=False),
                         'image_data': chunk['content'],
                         'is_multimodal': False
                     }
@@ -173,7 +173,7 @@ class SupabaseManager:
                         'chunk_type': 'mixed',
                         'page_number': chunk['page_number'],
                         'embedding': embedding,  # Utiliser l'embedding textuel
-                        'metadata': json.dumps(chunk['metadata']),
+                        'metadata': json.dumps(chunk['metadata'], ensure_ascii=False),
                         'image_data': chunk['image_data'],
                         'is_multimodal': True
                     }

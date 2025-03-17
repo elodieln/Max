@@ -12,6 +12,9 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import time
 
+from src.utils.text_to_image import text_to_image
+
+
 logger = logging.getLogger(__name__)
 
 class EmbeddingsClient:
@@ -22,26 +25,31 @@ class EmbeddingsClient:
         self.dimension = 1536  # Dimension par défaut des embeddings
         
         # Modèle local pour le texte
-        self.text_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        self.text_model = SentenceTransformer('allenai/scibert_scivocab_uncased')
         
         logger.info("Initialized EmbeddingsClient")
         
     async def encode_text(self, texts: List[str]) -> List[List[float]]:
         """
-        Génère des embeddings pour une liste de textes en utilisant l'API distante
+        Génère des embeddings pour une liste de textes en utilisant l'API distante.
+        Si l'API renvoie une erreur, effectue un fallback via text-to-image.
+        
         Args:
             texts: Liste de chaînes de texte
         Returns:
-            Liste d'embeddings
+            Liste d'embeddings.
         """
+        # Nettoyer les textes pour éviter les problèmes d'encodage (remplacer les en dash et autres caractères problématiques)
+        clean_texts = [text.replace('\u2013', '-').encode('utf-8', errors='replace').decode('utf-8') for text in texts]
+        
         max_attempts = 3
         for attempt in range(max_attempts):
             try:
-                # Utiliser l'API distante
                 url = f"{self.base_url}/encode_queries"
+                # Envoyer les textes nettoyés dans le payload
                 response = requests.post(
                     url,
-                    json=texts,  # Envoyer directement la liste
+                    json={"queries": clean_texts},
                     params={"dimension": self.dimension}
                 )
                 if response.status_code == 200:
@@ -53,85 +61,96 @@ class EmbeddingsClient:
             except Exception as e:
                 logger.error(f"Attempt {attempt+1} to generate text embeddings failed: {str(e)}")
                 if attempt < max_attempts - 1:
-                    time.sleep(1)  # Attendre 1 seconde avant de réessayer
+                    time.sleep(1)
                 else:
-                    logger.info("Falling back to local model")
-                    local_embeddings = self.text_model.encode(texts, convert_to_numpy=True)
-                    adapted_embeddings = []
-                    for emb in local_embeddings:
-                        repetitions = self.dimension // len(emb) + 1
-                        extended_emb = np.tile(emb, repetitions)[:self.dimension].tolist()
-                        adapted_embeddings.append(extended_emb)
-                    logger.info(f"Successfully generated {len(adapted_embeddings)} text embeddings locally")
-                    return adapted_embeddings
+                    logger.info("Falling back to text-to-image conversion for embeddings")
+                    # Convertir chaque texte en image
+                    image_data_list = [text_to_image(text) for text in clean_texts]
+                    try:
+                        url = f"{self.base_url}/encode_documents"
+                        files = []
+                        for idx, img_base64 in enumerate(image_data_list):
+                            files.append(
+                                ('files', (f"text_{idx}.jpg", io.BytesIO(base64.b64decode(img_base64)), 'image/jpeg'))
+                            )
+                        response = requests.post(
+                            url,
+                            files=files,
+                            params={"dimension": self.dimension}
+                        )
+                        if response.status_code == 200:
+                            embeddings = response.json()["embeddings"]
+                            logger.info(f"Successfully generated {len(embeddings)} text embeddings via text-to-image fallback")
+                            return embeddings
+                        else:
+                            raise Exception(f"Error: {response.status_code}, {response.text}")
+                    except Exception as fallback_e:
+                        logger.error(f"Text-to-image fallback failed: {str(fallback_e)}")
+                        return [[0] * self.dimension for _ in range(len(texts))]
     
     async def encode_images(self, image_data_list: List[str]) -> List[List[float]]:
         """
         Génère des embeddings pour une liste d'images en base64
-        
+
         Args:
             image_data_list: Liste de chaînes base64 représentant des images
-            
+
         Returns:
             Liste d'embeddings (vecteurs de dimension 1536)
         """
-        try:
-            url = f"{self.base_url}/encode_documents"
-            
-            # Créer des fichiers temporaires à partir des données base64
-            temp_files = []
-            files = []
-            
-            for idx, img_base64 in enumerate(image_data_list):
-                try:
-                    # Décoder le base64
-                    img_data = base64.b64decode(img_base64)
-                    
-                    # Créer un fichier temporaire
-                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                    temp_file.write(img_data)
-                    temp_file.close()
-                    temp_files.append(temp_file.name)
-                    
-                    # Ajouter à la liste de fichiers pour la requête
-                    files.append(
-                        ('files', (f'image_{idx}.png', open(temp_file.name, 'rb'), 'image/png'))
-                    )
-                except Exception as e:
-                    logger.error(f"Error processing image {idx}: {str(e)}")
-                    # Continuer avec les autres images
-            
-            if not files:
-                logger.error("No valid images to process")
-                return []
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                url = f"{self.base_url}/encode_documents"
                 
-            logger.info(f"Generating embeddings for {len(files)} images")
-            response = requests.post(
-                url, 
-                files=files, 
-                params={"dimension": self.dimension}
-            )
-            
-            # Nettoyer les fichiers temporaires
-            for temp_file in temp_files:
-                try:
-                    os.unlink(temp_file)
-                except Exception:
-                    pass
-            
-            if response.status_code == 200:
-                embeddings = response.json()["embeddings"]
-                logger.info(f"Successfully generated {len(embeddings)} image embeddings")
-                return embeddings
-            else:
-                # En cas d'erreur, retourner des embeddings vides
-                logger.error(f"Error: {response.status_code}, {response.text}")
-                return [[0] * self.dimension for _ in range(len(files))]
+                # Créer des fichiers temporaires à partir des données base64
+                temp_files = []
+                files = []
                 
-        except Exception as e:
-            logger.error(f"Error generating image embeddings: {str(e)}")
-            # Retourner des embeddings vides en cas d'erreur
-            return [[0] * self.dimension for _ in range(len(image_data_list))]
+                for idx, img_base64 in enumerate(image_data_list):
+                    try:
+                        img_data = base64.b64decode(img_base64)
+                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                        temp_file.write(img_data)
+                        temp_file.close()
+                        temp_files.append(temp_file.name)
+                        files.append(
+                            ('files', (f'image_{idx}.png', open(temp_file.name, 'rb'), 'image/png'))
+                        )
+                    except Exception as e:
+                        logger.error(f"Error processing image {idx}: {str(e)}")
+                
+                if not files:
+                    logger.error("No valid images to process")
+                    return []
+                    
+                logger.info(f"Generating embeddings for {len(files)} images (Attempt {attempt+1}/{max_attempts})")
+                response = requests.post(
+                    url, 
+                    files=files, 
+                    params={"dimension": self.dimension}
+                )
+                
+                # Nettoyer les fichiers temporaires
+                for temp_file in temp_files:
+                    try:
+                        os.unlink(temp_file)
+                    except Exception:
+                        pass
+                
+                if response.status_code == 200:
+                    embeddings = response.json()["embeddings"]
+                    logger.info(f"Successfully generated {len(embeddings)} image embeddings")
+                    return embeddings
+                else:
+                    raise Exception(f"Error: {response.status_code}, {response.text}")
+            except Exception as e:
+                logger.error(f"Attempt {attempt+1} to generate image embeddings failed: {str(e)}")
+                if attempt < max_attempts - 1:
+                    time.sleep(1)  # Attendre 1 seconde avant de réessayer
+                else:
+                    logger.info("Falling back: returning zero vectors for images")
+                    return [[0] * self.dimension for _ in range(len(image_data_list))]
     
     async def compute_similarity(self, query_embedding: List[float], doc_embedding: List[float]) -> float:
         """
