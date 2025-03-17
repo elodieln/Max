@@ -1,0 +1,224 @@
+.chat-history-container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+    max-width: 320px;
+    height: 70vh;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    margin-right: 1.5rem;
+    overflow: hidden;
+}
+
+.chat-history-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #007179;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.history-icon {
+    color: #007179;
+}
+
+.search-container {
+    margin-bottom: 1rem;
+}
+
+.history-search-input {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background-color: #f9f9f9;
+    transition: all 0.2s ease;
+}
+
+.history-search-input:focus {
+    outline: none;
+    border-color: #007179;
+    background-color: white;
+    box-shadow: 0 0 0 2px rgba(0, 113, 121, 0.1);
+}
+
+.chat-history-loading,
+.chat-history-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 113, 121, 0.1);
+    border-radius: 50%;
+    border-top-color: #007179;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.conversation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.conversation-item:hover {
+    background-color: #f5f5f5;
+}
+
+.conversation-item.active {
+    background-color: #e6f7f8;
+    border-left-color: #007179;
+}
+
+.conversation-content {
+    flex: 1;
+    min-width: 0;
+    /* Pour permettre l'ellipsis */
+}
+
+.conversation-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-date {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.delete-button {
+    visibility: hidden;
+    opacity: 0;
+    background: transparent;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.conversation-item:hover .delete-button {
+    visibility: visible;
+    opacity: 1;
+}
+
+.delete-button:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+}
+
+.confirm-delete {
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #f44336 !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.8rem;
+}
+
+.chevron-icon {
+    visibility: hidden;
+    opacity: 0;
+    color: #007179;
+    transition: all 0.2s ease;
+}
+
+.conversation-item:hover .chevron-icon {
+    visibility: visible;
+    opacity: 1;
+}
+
+.conversation-item.active .chevron-icon {
+    visibility: visible;
+    opacity: 1;
+}
+
+.new-conversation-button {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: #007179;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.new-conversation-button:hover {
+    background-color: #005a61;
+}
+
+.button-icon {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .chat-history-container {
+        max-width: 100%;
+        margin-right: 0;
+        margin-bottom: 1.5rem;
+        height: auto;
+        min-height: auto;
+        max-height: 300px;
+    }
+
+    .delete-button {
+        visibility: visible;
+        opacity: 0.7;
+    }
+
+    .chevron-icon {
+        visibility: visible;
+        opacity: 0.7;
+    }
+}

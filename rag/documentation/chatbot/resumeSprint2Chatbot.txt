@@ -1,0 +1,210 @@
+# Rapport sur le Sprint 2 : Connexion à l'API et fonctionnalités de base du chatbot Max
+
+## Résumé du Sprint
+
+Au cours du Sprint 2, nous avons réussi à connecter l'interface utilisateur du chatbot Max à l'API RAG Multimodal développée par l'équipe backend. Conformément au cahier des sprints, nous avons mis en place l'intégration avec l'API, implémenté l'envoi et la réception des messages, et ajouté un indicateur de chargement pour améliorer l'expérience utilisateur.
+
+## Travail effectué
+
+### 1. Configuration et résolution des dépendances du backend
+
+Avant de pouvoir intégrer l'API, nous avons dû résoudre quelques problèmes de dépendances pour faire fonctionner le serveur backend :
+
+- Installation de la bibliothèque `pydantic-settings` requise par le serveur FastAPI
+- Installation de `python-multipart` pour permettre le traitement des données de formulaire par l'API
+- Mise à jour du fichier `requirements.txt` pour inclure ces nouvelles dépendances
+
+### 2. Création du service API pour le chatbot
+
+Nous avons mis en place un service dédié pour gérer la communication avec l'API backend :
+
+- Création du dossier `src/services/api` pour organiser les services liés à l'API
+- Implémentation du fichier `chatbot.js` contenant deux fonctions principales :
+  - `askQuestion()` : pour envoyer une requête à l'API et recevoir une réponse
+  - `checkApiHealth()` : pour vérifier l'état de l'API
+
+Le service utilise Axios pour les appels HTTP et est configuré pour communiquer avec l'API sur `http://localhost:8000`, conformément à la documentation fournie.
+
+```javascript
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:8000';
+
+// Fonction pour envoyer une question à Max et obtenir une réponse
+export const askQuestion = async (query, queryType = 'question') => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/queries/ask`, {
+      query,
+      query_type: queryType,
+      temperature: 0.3
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la requête vers l\'API:', error);
+    throw error;
+  }
+};
+
+// Fonction pour vérifier la santé de l'API
+export const checkApiHealth = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/health`);
+    return response.data.status === 'healthy';
+  } catch (error) {
+    console.error('Erreur lors de la vérification de l\'état de l\'API:', error);
+    return false;
+  }
+};
+```
+
+### 3. Mise à jour du composant ChatbotPage
+
+Nous avons amélioré le composant `ChatbotPage.jsx` pour intégrer l'API et enrichir l'expérience utilisateur :
+
+- Ajout d'un état `isLoading` pour gérer l'affichage pendant le chargement des réponses
+- Implémentation d'une référence avec `useRef` pour permettre le défilement automatique vers le dernier message
+- Modification de la fonction `handleSendMessage` pour :
+  - Faire un appel asynchrone à l'API via notre service
+  - Afficher un indicateur de chargement pendant l'attente de la réponse
+  - Traiter et afficher la réponse ou gérer les erreurs
+  - Afficher les métadonnées de la réponse (modèle utilisé, temps de traitement)
+
+```javascript
+const handleSendMessage = async (e) => {
+  e.preventDefault();
+  
+  if (!inputMessage.trim() || isLoading) return;
+  
+  // Ajouter le message de l'utilisateur à la liste des messages
+  const newUserMessage = {
+    id: Date.now(),
+    text: inputMessage,
+    sender: 'user'
+  };
+  
+  setMessages([...messages, newUserMessage]);
+  
+  // Sauvegarder et vider l'entrée utilisateur
+  const question = inputMessage;
+  setInputMessage('');
+  
+  // Indiquer le chargement
+  setIsLoading(true);
+  
+  try {
+    // Appel API pour obtenir la réponse
+    const response = await askQuestion(question);
+    
+    // Ajouter la réponse du bot
+    const botResponse = {
+      id: Date.now() + 1,
+      text: response.response || "Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.",
+      sender: 'bot',
+      // Ajout de métadonnées du modèle si disponibles
+      metadata: {
+        model: response.model_used,
+        processingTime: response.processing_time
+      }
+    };
+    
+    setMessages(prevMessages => [...prevMessages, botResponse]);
+  } catch (error) {
+    // En cas d'erreur, ajouter un message d'erreur
+    const errorMessage = {
+      id: Date.now() + 1,
+      text: "Une erreur est survenue lors de la communication avec le serveur. Veuillez réessayer plus tard.",
+      sender: 'bot',
+      error: true
+    };
+    
+    setMessages(prevMessages => [...prevMessages, errorMessage]);
+  } finally {
+    // Fin du chargement
+    setIsLoading(false);
+  }
+};
+```
+
+- Amélioration du rendu du composant pour inclure :
+  - Un indicateur de chargement avec animation
+  - Des métadonnées pour chaque message du bot
+  - Un style différent pour les messages d'erreur
+  - Une désactivation du formulaire pendant le chargement
+
+### 4. Amélioration des styles CSS
+
+Nous avons complété et amélioré le fichier `ChatbotPage.css` pour intégrer de nouveaux éléments visuels et interactions :
+
+- Ajout de styles pour les messages d'erreur avec une bordure de couleur distinctive
+- Création de styles pour les métadonnées de message (modèle, temps de traitement)
+- Implémentation d'une animation de chargement avec des points pulsants
+- Ajout de styles pour les états désactivés des éléments du formulaire
+- Optimisation de l'apparence sur les appareils mobiles
+
+```css
+/* Animation des points de chargement */
+.loading-message {
+    padding: 16px;
+    min-height: 24px;
+}
+
+.loading-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.loading-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #007179;
+    border-radius: 50%;
+    animation: loadingDot 1.4s infinite ease-in-out both;
+}
+
+/* Animation keyframes et autres styles... */
+```
+
+### 5. Installation des dépendances frontend
+
+Nous avons installé les bibliothèques nécessaires pour le frontend :
+
+- Installation d'Axios pour les appels HTTP (`npm install axios`)
+
+## Résultat
+
+Le résultat de ce sprint est une interface de chatbot pleinement fonctionnelle qui :
+
+1. Permet aux utilisateurs d'envoyer des questions sur des sujets d'électronique
+2. Communique avec l'API RAG Multimodal pour obtenir des réponses pertinentes
+3. Affiche un indicateur de chargement pendant le traitement des requêtes
+4. Présente les réponses dans une interface visuellement cohérente avec le reste du site
+5. Affiche des métadonnées sur les réponses (modèle utilisé, temps de traitement)
+6. Gère correctement les erreurs qui pourraient survenir lors de la communication
+
+L'interface est responsive et s'adapte aux différentes tailles d'écran.
+
+## Tests effectués
+
+Nous avons testé le chatbot en posant diverses questions relatives à l'électronique, comme "Bonjour, c'est quoi un condensateur ?". Le chatbot a répondu avec des explications détaillées et pertinentes, démontrant sa capacité à fournir une assistance précise aux étudiants en électronique.
+
+## Difficultés rencontrées et solutions
+
+- **Problème de dépendances backend** : Résolu en installant les bibliothèques manquantes
+- **Problème d'affichage CSS** : Résolu en complétant le fichier CSS avec tous les styles nécessaires
+- **Gestion des états de chargement** : Implémentée via un état React et des styles pour améliorer l'expérience utilisateur
+
+## Prochaines étapes (Sprint 3)
+
+Pour le prochain sprint, nous nous concentrerons sur les améliorations UX suivantes :
+
+1. Ajout du formatage Markdown pour les réponses
+2. Implémentation d'un effet de frappe pour l'affichage progressif des réponses
+3. Sauvegarde de l'historique des conversations
+
+## Conclusion
+
+Le Sprint 2 a été complété avec succès, établissant une connexion fonctionnelle entre l'interface du chatbot et l'API RAG Multimodal. L'interface utilisateur est maintenant capable de communiquer avec le backend, d'afficher les réponses générées et de fournir une expérience utilisateur fluide. Cette étape constitue une base solide pour les améliorations prévues dans le Sprint 3.
